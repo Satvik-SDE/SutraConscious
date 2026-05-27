@@ -1,0 +1,266 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Russo+One&family=Caveat+Brush&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────
+   Base
+   ───────────────────────────────────────────── */
+@layer base {
+    :root {
+        --color-brand-blue: 38 118 150;
+        --color-brand-skin: 238 214 195;
+        --color-brand-black: 14 15 15;
+        --color-surface-cream: 251 250 246;
+        --color-surface-line: 238 232 222;
+        --header-height: 5rem;
+        --announcement-height: 2.25rem;
+    }
+
+    *, *::before, *::after {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+        scroll-behavior: smooth;
+        scroll-padding-top: var(--header-height);
+    }
+
+    body {
+        @apply bg-surface-cream text-brand-black font-sans antialiased;
+        font-feature-settings: 'ss01', 'cv11';
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1, h2, h3, h4 {
+        text-wrap: balance;
+        @apply font-display tracking-tight;
+    }
+
+    p {
+        text-wrap: pretty;
+    }
+
+    img {
+        @apply select-none;
+    }
+
+    ::selection {
+        background-color: rgb(var(--color-brand-blue) / 0.15);
+        color: rgb(var(--color-brand-black));
+    }
+
+    /* Hide cloak elements until Alpine initialises */
+    [x-cloak] { display: none !important; }
+
+    /* Modern focus rings */
+    :focus-visible {
+        outline: 2px solid rgb(var(--color-brand-blue));
+        outline-offset: 3px;
+        border-radius: 2px;
+    }
+
+    /* Inputs */
+    input[type=text], input[type=email], input[type=tel], input[type=number],
+    input[type=password], select, textarea {
+        @apply bg-surface-cream;
+    }
+
+    /* Respect reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   Reusable components
+   ───────────────────────────────────────────── */
+@layer components {
+    .container-narrow {
+        @apply max-w-5xl mx-auto px-4 sm:px-6 lg:px-8;
+    }
+    .container-wide {
+        @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    }
+    .container-bleed {
+        @apply max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        @apply relative inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-brand-blue text-surface-cream font-medium tracking-[0.18em] uppercase text-xs overflow-hidden transition-all duration-500 ease-silk hover:bg-brand-blueDark hover:shadow-lift focus-visible:outline-offset-4;
+    }
+    .btn-primary::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+        transform: translateX(-100%);
+        transition: transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .btn-primary:hover::after {
+        transform: translateX(100%);
+    }
+
+    .btn-outline {
+        @apply relative inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-brand-blue text-brand-blue font-medium tracking-[0.18em] uppercase text-xs transition-all duration-500 ease-silk hover:bg-brand-blue hover:text-surface-cream;
+    }
+
+    .btn-ghost {
+        @apply inline-flex items-center gap-2 text-brand-black font-medium tracking-[0.18em] uppercase text-xs transition-colors hover:text-brand-blue;
+    }
+
+    /* Inline link with growing underline */
+    .link-grow {
+        @apply relative inline-flex items-center gap-2 text-brand-blue uppercase tracking-[0.2em] text-xs font-medium;
+    }
+    .link-grow::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -4px;
+        height: 1px;
+        background-color: currentColor;
+        transform: scaleX(1);
+        transform-origin: right;
+        transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .link-grow:hover::after {
+        transform: scaleX(0);
+        transform-origin: left;
+    }
+    .link-grow:hover {
+        @apply text-brand-blueDark;
+    }
+
+    /* Eyebrow label */
+    .eyebrow {
+        @apply text-xs uppercase tracking-[0.3em] text-brand-blue font-medium;
+    }
+    .eyebrow-dim {
+        @apply text-xs uppercase tracking-[0.3em] text-brand-black/60 font-medium;
+    }
+
+    /* Form field */
+    .field-input {
+        @apply w-full bg-surface-cream border border-surface-line px-4 py-3 text-brand-black placeholder:text-brand-black/30 focus:border-brand-blue focus:ring-0 transition-colors;
+    }
+    .field-label {
+        @apply block text-xs uppercase tracking-[0.2em] text-brand-black/60 mb-2 font-medium;
+    }
+
+    /* Pill / chip */
+    .chip {
+        @apply inline-flex items-center gap-1.5 px-3 py-1 text-[0.7rem] uppercase tracking-[0.18em] bg-brand-skin/50 text-brand-black/80;
+    }
+
+    /* Subtle divider */
+    .rule {
+        @apply h-px bg-surface-line w-full;
+    }
+}
+
+/* ─────────────────────────────────────────────
+   Scroll-reveal system (Intersection Observer)
+   NOTE: kept OUTSIDE @layer utilities so Tailwind
+   does not purge the JS-toggled `.is-revealed`
+   class at build time.
+   ───────────────────────────────────────────── */
+[data-reveal] {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 900ms cubic-bezier(0.22, 1, 0.36, 1),
+                transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+}
+[data-reveal="fade"] { transform: none; }
+[data-reveal="left"] { transform: translateX(-28px); }
+[data-reveal="right"] { transform: translateX(28px); }
+[data-reveal].is-revealed {
+    opacity: 1 !important;
+    transform: translate(0, 0) !important;
+}
+[data-reveal-delay="100"] { transition-delay: 100ms; }
+[data-reveal-delay="200"] { transition-delay: 200ms; }
+[data-reveal-delay="300"] { transition-delay: 300ms; }
+[data-reveal-delay="400"] { transition-delay: 400ms; }
+[data-reveal-delay="500"] { transition-delay: 500ms; }
+[data-reveal-delay="600"] { transition-delay: 600ms; }
+
+/* Fallback for when JS is disabled — reveal everything immediately */
+.no-js [data-reveal] {
+    opacity: 1;
+    transform: none;
+}
+
+/* Hover-swap product image */
+.product-media {
+    position: relative;
+    overflow: hidden;
+}
+.product-media img {
+    transition: transform 1200ms cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 700ms ease;
+}
+.product-media .media-alt {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+}
+.group:hover .product-media .media-primary {
+    transform: scale(1.06);
+    opacity: 0;
+}
+.group:hover .product-media .media-primary.media-solo {
+    opacity: 1;
+}
+.group:hover .product-media .media-alt {
+    opacity: 1;
+    transform: scale(1.04);
+}
+
+/* Marquee */
+.marquee-track {
+    display: inline-flex;
+    gap: 3rem;
+    white-space: nowrap;
+    will-change: transform;
+    animation: marquee 28s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .marquee-track { animation: none; }
+}
+
+/* Underline link */
+.link-underline {
+    background-image: linear-gradient(to right, currentColor 0%, currentColor 100%);
+    background-position: 0% 100%;
+    background-repeat: no-repeat;
+    background-size: 100% 1px;
+    transition: background-size 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.link-underline:hover {
+    background-size: 0% 1px;
+}
+
+/* Drag-safe images */
+.no-drag {
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+/* Thin scrollbars in drawers */
+.scroll-thin::-webkit-scrollbar { width: 6px; }
+.scroll-thin::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--color-brand-black) / 0.15);
+    border-radius: 3px;
+}

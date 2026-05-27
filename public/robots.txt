@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /admin
+Disallow: /cart
+Disallow: /checkout
+Disallow: /order
+Disallow: /webhooks
+Allow: /
+
+Sitemap: https://sutraconscious.com/sitemap.xml
