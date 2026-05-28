@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Shop\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Services\CustomerAccountService;
+use App\Services\WishlistService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -44,6 +45,7 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
         $this->accounts->attachGuestOrders($user);
+        $this->wishlist->mergeSessionIntoUser($user);
 
         return redirect()->intended(route('account.orders'));
     }

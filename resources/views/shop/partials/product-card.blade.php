@@ -7,46 +7,51 @@
     $hasStock = $product->variants->sum('stock') > 0;
 @endphp
 
-<a href="{{ route('product.show', $product->slug) }}"
-   class="group block focus-visible:outline-offset-4">
-    <div class="product-media aspect-product bg-brand-skin/30 border border-surface-line">
-        @if($primary)
-            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($primary->path) }}"
-                 alt="{{ $primary->alt ?? $product->name }}"
-                 loading="lazy"
-                 decoding="async"
-                 class="media-primary {{ $alt ? '' : 'media-solo' }} w-full h-full object-cover no-drag">
-        @else
-            <div class="w-full h-full flex items-center justify-center text-brand-black/30 text-[0.7rem] uppercase tracking-[0.2em]">No image</div>
-        @endif
+<article class="group">
+    <div class="relative product-media aspect-product bg-brand-skin/30 border border-surface-line">
+        <a href="{{ route('product.show', $product->slug) }}" class="block absolute inset-0 z-0" tabindex="-1" aria-hidden="true">
+            @if($primary)
+                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($primary->path) }}"
+                     alt="{{ $primary->alt ?? $product->name }}"
+                     loading="lazy"
+                     decoding="async"
+                     class="media-primary {{ $alt ? '' : 'media-solo' }} w-full h-full object-cover no-drag">
+            @else
+                <div class="w-full h-full flex items-center justify-center text-brand-black/30 text-[0.7rem] uppercase tracking-[0.2em]">No image</div>
+            @endif
 
-        @if($alt)
-            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($alt->path) }}"
-                 alt="{{ $alt->alt ?? $product->name }}"
-                 loading="lazy"
-                 decoding="async"
-                 class="media-alt w-full h-full object-cover no-drag">
-        @endif
+            @if($alt)
+                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($alt->path) }}"
+                     alt="{{ $alt->alt ?? $product->name }}"
+                     loading="lazy"
+                     decoding="async"
+                     class="media-alt w-full h-full object-cover no-drag">
+            @endif
+        </a>
+
+        <div class="absolute top-3 right-3 z-10" @click.stop>
+            @include('shop.partials.wishlist-button', ['product' => $product])
+        </div>
 
         @if($product->is_featured)
-            <span class="absolute top-3 left-3 chip bg-brand-black text-surface-cream">New</span>
+            <span class="absolute top-3 left-3 chip bg-brand-black text-surface-cream z-10">New</span>
         @endif
         @if(! $hasStock)
-            <span class="absolute top-3 right-3 chip bg-surface-cream/90 text-brand-black/60">Sold out</span>
+            <span class="absolute bottom-3 right-3 chip bg-surface-cream/90 text-brand-black/60 z-10">Sold out</span>
         @endif
 
-        {{-- Hover quick-view --}}
-        <div class="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-silk bg-surface-cream/95 backdrop-blur border-t border-surface-line py-3 px-4">
+        <a href="{{ route('product.show', $product->slug) }}"
+           class="absolute inset-x-0 bottom-0 z-[5] translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-silk bg-surface-cream/95 backdrop-blur border-t border-surface-line py-3 px-4">
             <div class="flex items-center justify-between gap-3">
                 <span class="text-[0.7rem] uppercase tracking-[0.2em] text-brand-blue font-medium">View product</span>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" class="w-4 h-4 text-brand-blue">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 19.5 15-15m0 0H8.25m11.25 0v11.25"/>
                 </svg>
             </div>
-        </div>
+        </a>
     </div>
 
-    <div class="mt-5">
+    <a href="{{ route('product.show', $product->slug) }}" class="block mt-5 focus-visible:outline-offset-4">
         @if($product->category)
             <div class="text-[0.65rem] uppercase tracking-[0.3em] text-brand-black/45 mb-1.5">{{ $product->category->name }}</div>
         @endif
@@ -64,5 +69,5 @@
                 @endforeach
             </div>
         @endif
-    </div>
-</a>
+    </a>
+</article>

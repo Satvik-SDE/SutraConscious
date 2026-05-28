@@ -56,6 +56,7 @@
         <div class="md:col-span-2">
             <div class="text-[0.7rem] uppercase tracking-[0.3em] text-surface-cream/50 mb-5">Care</div>
             <ul class="space-y-3 text-sm">
+                <li><a href="{{ route('wishlist.show') }}" class="text-surface-cream/85 hover:text-brand-blue transition-colors">Wishlist</a></li>
                 <li><a href="{{ route('orders.track') }}" class="text-surface-cream/85 hover:text-brand-blue transition-colors">Track order</a></li>
                 @auth
                     <li><a href="{{ route('account.orders') }}" class="text-surface-cream/85 hover:text-brand-blue transition-colors">My orders</a></li>

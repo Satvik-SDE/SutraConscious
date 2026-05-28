@@ -77,7 +77,10 @@
                     @endif
 
                     {{-- Main image (zoomable) --}}
-                    <div class="{{ $hasMultipleImages ? 'lg:order-2' : '' }} lg:sticky lg:top-28">
+                    <div class="{{ $hasMultipleImages ? 'lg:order-2' : '' }} lg:sticky lg:top-28 relative">
+                        <div class="absolute top-4 right-4 z-20">
+                            @include('shop.partials.wishlist-button', ['product' => $product, 'size' => 'lg'])
+                        </div>
                         <div class="aspect-product bg-brand-skin/30 border border-surface-line overflow-hidden cursor-zoom-in" data-zoom>
                             @if($product->images->isNotEmpty())
                                 @foreach($product->images as $img)

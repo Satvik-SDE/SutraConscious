@@ -62,6 +62,11 @@ class Product extends Model
         return $this->hasMany(ProductImage::class)->orderBy('sort_order');
     }
 
+    public function wishlistItems(): HasMany
+    {
+        return $this->hasMany(WishlistItem::class);
+    }
+
     public function primaryImage(): ?ProductImage
     {
         return $this->images->where('is_primary', true)->first() ?? $this->images->first();

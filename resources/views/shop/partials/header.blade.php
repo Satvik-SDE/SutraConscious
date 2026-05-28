@@ -2,6 +2,7 @@
     $cartService = app(\App\Services\CartService::class);
     $cart = $cartService->current()->load(['items.variant.product.images']);
     $cartCount = $cart->itemCount();
+    $wishlistCount = $wishlistCount ?? 0;
     $navCategories = \App\Models\Category::query()->where('is_active', true)->orderBy('sort_order')->get(['name', 'slug']);
 @endphp
 
@@ -46,6 +47,17 @@
                 </a>
             @endauth
 
+            <a href="{{ route('wishlist.show') }}"
+               class="relative inline-flex p-2 text-brand-black hover:text-brand-blue transition-colors"
+               aria-label="Wishlist">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-[22px] h-[22px]">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/>
+                </svg>
+                @if($wishlistCount > 0)
+                    <span class="absolute -top-0.5 -right-0.5 bg-brand-blue text-surface-cream text-[0.6rem] rounded-full h-[18px] min-w-[18px] px-1 flex items-center justify-center font-medium">{{ $wishlistCount }}</span>
+                @endif
+            </a>
+
             <button type="button"
                     @click="$store.drawer.show()"
                     class="relative inline-flex items-center gap-2 p-2 text-brand-black hover:text-brand-blue transition-colors"
@@ -87,6 +99,7 @@
             @endforeach
             <a href="{{ route('about') }}" class="py-3 text-brand-black text-sm uppercase tracking-[0.2em] border-b border-surface-line">Our Story</a>
             <a href="{{ route('contact') }}" class="py-3 text-brand-black text-sm uppercase tracking-[0.2em] border-b border-surface-line">Contact</a>
+            <a href="{{ route('wishlist.show') }}" class="py-3 text-brand-black text-sm uppercase tracking-[0.2em] border-b border-surface-line">Wishlist@if($wishlistCount > 0) ({{ $wishlistCount }})@endif</a>
             @auth
                 <a href="{{ route('account.orders') }}" class="py-3 text-brand-blue text-sm uppercase tracking-[0.2em]">My orders</a>
             @else
