@@ -35,6 +35,8 @@ return [
         'key' => env('RAZORPAY_KEY_ID'),
         'secret' => env('RAZORPAY_KEY_SECRET'),
         'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET'),
+        // Derived from key prefix: rzp_live_ = live, rzp_test_ = test
+        'live' => str_starts_with((string) env('RAZORPAY_KEY_ID', ''), 'rzp_live_'),
     ],
 
 ];

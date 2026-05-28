@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use InvalidArgumentException;
 use Razorpay\Api\Api;
 
 class RazorpayService
@@ -29,21 +30,46 @@ class RazorpayService
         return config('services.razorpay.key');
     }
 
+    /**
+     * @return array{id: string, amount: int, currency: string}
+     */
+    public function createPaymentOrder(int $amountPaise, string $currency = 'INR', ?string $receipt = null): array
+    {
+        if (! $this->api) {
+            throw new InvalidArgumentException('Razorpay is not configured.');
+        }
+
+        if ($amountPaise < 100) {
+            throw new InvalidArgumentException('Amount must be at least 100 paise.');
+        }
+
+        $payload = [
+            'amount' => $amountPaise,
+            'currency' => $currency,
+        ];
+
+        if ($receipt !== null && $receipt !== '') {
+            $payload['receipt'] = $receipt;
+        }
+
+        $created = $this->api->order->create($payload);
+
+        return [
+            'id' => $created['id'],
+            'amount' => (int) $created['amount'],
+            'currency' => $created['currency'],
+        ];
+    }
+
     public function createOrder(Order $order): ?string
     {
         if (! $this->api) {
             return null;
         }
 
-        $rzpOrder = $this->api->order->create([
-            'amount' => $order->total * 100,
-            'currency' => $order->currency,
-            'receipt' => $order->number,
-            'notes' => [
-                'order_number' => $order->number,
-                'customer_email' => $order->customer_email,
-            ],
-        ]);
+        $amountPaise = (int) round($order->total * 100);
+
+        $rzpOrder = $this->createPaymentOrder($amountPaise, $order->currency, $order->number);
 
         $order->update([
             'payment_provider' => 'razorpay',
@@ -65,8 +91,9 @@ class RazorpayService
                 'razorpay_payment_id' => $razorpayPaymentId,
                 'razorpay_signature' => $razorpaySignature,
             ]);
+
             return true;
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             return false;
         }
     }
@@ -80,8 +107,9 @@ class RazorpayService
 
         try {
             $this->api->utility->verifyWebhookSignature($body, $signature, $secret);
+
             return true;
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             return false;
         }
     }

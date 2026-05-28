@@ -87,7 +87,14 @@ class CheckoutController extends Controller
         });
 
         if ($this->razorpay->isConfigured()) {
-            $this->razorpay->createOrder($order);
+            try {
+                $this->razorpay->createOrder($order);
+            } catch (\Throwable) {
+                return redirect()
+                    ->route('order.confirmation', $order)
+                    ->withErrors(['payment' => 'We could not start online payment. Please contact us to complete your order.']);
+            }
+
             return redirect()->route('checkout.pay', $order);
         }
 

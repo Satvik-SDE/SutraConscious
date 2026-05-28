@@ -27,8 +27,10 @@
                 </div>
             @endif
 
+            <div id="payment-error" class="mt-8 hidden bg-red-50 border border-red-200 text-red-700 p-4 text-sm text-left max-w-md mx-auto" role="alert"></div>
+
             <div class="mt-12 flex flex-col items-center gap-4" data-reveal data-reveal-delay="200">
-                <button id="rzp-pay" class="btn-primary text-sm">
+                <button id="rzp-pay" type="button" class="btn-primary text-sm">
                     Pay ₹{{ number_format($order->total) }} via Razorpay
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-3.75 11.25h16.5a1.5 1.5 0 0 0 1.5-1.5V12a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 12v8.25a1.5 1.5 0 0 0 1.5 1.5Z"/>
@@ -37,7 +39,11 @@
                 <a href="{{ route('cart.show') }}" class="text-[0.78rem] uppercase tracking-[0.2em] text-brand-black/55 hover:text-brand-blue transition-colors">Back to bag</a>
             </div>
 
-            <p class="mt-16 text-xs text-brand-black/50 max-w-sm mx-auto">Razorpay is in test mode. Use a test card to complete checkout without real money.</p>
+            @if (config('services.razorpay.live'))
+                <p class="mt-16 text-xs text-brand-black/50 max-w-sm mx-auto">Payments are processed securely by Razorpay. UPI, cards, and netbanking accepted.</p>
+            @else
+                <p class="mt-16 text-xs text-brand-black/50 max-w-sm mx-auto">Razorpay test mode — use Razorpay test cards/UPI for trial checkouts. No real money is charged.</p>
+            @endif
         </div>
     </section>
 
@@ -51,6 +57,19 @@
     @push('scripts')
         <script>
             (function () {
+                const errorEl = document.getElementById('payment-error');
+                const payButton = document.getElementById('rzp-pay');
+
+                function showPaymentError(message) {
+                    errorEl.textContent = message;
+                    errorEl.classList.remove('hidden');
+                }
+
+                function clearPaymentError() {
+                    errorEl.textContent = '';
+                    errorEl.classList.add('hidden');
+                }
+
                 const options = {
                     key: @json($razorpayKey),
                     amount: {{ $order->total * 100 }},
@@ -66,21 +85,37 @@
                     },
                     notes: { order_number: @json($order->number) },
                     theme: { color: '#267696' },
+                    modal: {
+                        ondismiss: function () {
+                            showPaymentError('Payment was cancelled. You can try again when ready.');
+                            payButton.disabled = false;
+                        },
+                    },
                     handler: function (response) {
+                        clearPaymentError();
                         const form = document.getElementById('rzp-verify');
                         form.querySelector('[name="razorpay_payment_id"]').value = response.razorpay_payment_id;
                         form.querySelector('[name="razorpay_order_id"]').value = response.razorpay_order_id;
                         form.querySelector('[name="razorpay_signature"]').value = response.razorpay_signature;
+                        payButton.disabled = true;
                         form.submit();
                     },
                 };
 
-                const button = document.getElementById('rzp-pay');
-                button.addEventListener('click', function () {
+                payButton.addEventListener('click', function () {
+                    clearPaymentError();
+                    payButton.disabled = true;
+
                     const rzp = new Razorpay(options);
+
                     rzp.on('payment.failed', function (resp) {
-                        alert('Payment failed: ' + (resp.error && resp.error.description));
+                        const description = (resp.error && resp.error.description)
+                            ? resp.error.description
+                            : 'Payment failed. Please try again or use another method.';
+                        showPaymentError(description);
+                        payButton.disabled = false;
                     });
+
                     rzp.open();
                 });
             })();
