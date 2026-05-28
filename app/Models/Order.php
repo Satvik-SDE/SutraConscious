@@ -117,7 +117,9 @@ class Order extends Model
         }
 
         if (filled($this->tracking_number)) {
-            return 'https://www.google.com/search?q=' . urlencode($this->tracking_carrier . ' ' . $this->tracking_number . ' tracking');
+            $query = trim(($this->tracking_carrier ?? '') . ' ' . $this->tracking_number . ' tracking');
+
+            return 'https://www.google.com/search?q=' . urlencode($query);
         }
 
         return null;

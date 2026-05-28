@@ -20,8 +20,8 @@
             </span>
             <div class="min-w-0 pt-0.5">
                 <p class="text-sm font-medium {{ $step['done'] || $step['current'] ? 'text-brand-black' : 'text-brand-black/45' }}">{{ $step['label'] }}</p>
-                @if($step['at'])
-                    <p class="mt-0.5 text-xs text-brand-black/50">{{ $step['at']->timezone(config('app.timezone'))->format('j M Y, g:i A') }}</p>
+                @if($step['at'] instanceof \Illuminate\Support\Carbon)
+                    <p class="mt-0.5 text-xs text-brand-black/50">{{ $step['at']->format('j M Y, g:i A') }}</p>
                 @endif
             </div>
         </li>

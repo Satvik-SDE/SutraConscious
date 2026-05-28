@@ -9,6 +9,10 @@ class OrderPolicy
 {
     public function view(User $user, Order $order): bool
     {
-        return $order->user_id === $user->id;
+        if ($order->user_id !== null && (int) $order->user_id === (int) $user->id) {
+            return true;
+        }
+
+        return strcasecmp((string) $order->customer_email, (string) $user->email) === 0;
     }
 }

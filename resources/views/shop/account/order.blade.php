@@ -6,7 +6,9 @@
             <a href="{{ $backUrl }}" class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/50 hover:text-brand-blue transition-colors">← {{ $backLabel }}</a>
             <p class="eyebrow mt-6">Order {{ $order->number }}</p>
             <h1 class="mt-3 font-display text-display-md text-brand-black">Order details</h1>
-            <p class="mt-2 text-sm text-brand-black/60">Placed {{ $order->created_at->format('j F Y, g:i A') }}</p>
+            @if($order->created_at)
+                <p class="mt-2 text-sm text-brand-black/60">Placed {{ $order->created_at->format('j F Y, g:i A') }}</p>
+            @endif
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12">

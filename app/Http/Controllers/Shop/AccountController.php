@@ -29,6 +29,7 @@ class AccountController extends Controller
             'order' => $order,
             'backUrl' => route('account.orders'),
             'backLabel' => 'All orders',
+            'isGuestView' => false,
         ]);
     }
 }
