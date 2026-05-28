@@ -99,7 +99,12 @@
             @endforeach
             <a href="{{ route('about') }}" class="py-3 text-brand-black text-sm uppercase tracking-[0.2em] border-b border-surface-line">Our Story</a>
             <a href="{{ route('contact') }}" class="py-3 text-brand-black text-sm uppercase tracking-[0.2em] border-b border-surface-line">Contact</a>
-            <a href="{{ route('wishlist.show') }}" class="py-3 text-brand-black text-sm uppercase tracking-[0.2em] border-b border-surface-line">Wishlist@if($wishlistCount > 0) ({{ $wishlistCount }})@endif</a>
+            <a href="{{ route('wishlist.show') }}" class="py-3 text-brand-black text-sm uppercase tracking-[0.2em] border-b border-surface-line">
+                Wishlist
+                @if($wishlistCount > 0)
+                    ({{ $wishlistCount }})
+                @endif
+            </a>
             @auth
                 <a href="{{ route('account.orders') }}" class="py-3 text-brand-blue text-sm uppercase tracking-[0.2em]">My orders</a>
             @else
