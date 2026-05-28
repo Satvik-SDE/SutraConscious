@@ -27,7 +27,40 @@ class CheckoutController extends Controller
 
         return view('shop.checkout', [
             'cart' => $cart,
+            'defaults' => $this->checkoutDefaults(),
         ]);
+    }
+
+    /** @return array<string, string|null> */
+    protected function checkoutDefaults(): array
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        $latest = $user->orders()->latest()->first();
+
+        if ($latest) {
+            return [
+                'customer_name' => $latest->customer_name,
+                'customer_email' => $latest->customer_email,
+                'customer_phone' => $latest->customer_phone,
+                'shipping_line1' => $latest->shipping_line1,
+                'shipping_line2' => $latest->shipping_line2,
+                'shipping_city' => $latest->shipping_city,
+                'shipping_state' => $latest->shipping_state,
+                'shipping_country' => $latest->shipping_country,
+                'shipping_postal_code' => $latest->shipping_postal_code,
+            ];
+        }
+
+        return [
+            'customer_name' => $user->name,
+            'customer_email' => $user->email,
+            'shipping_country' => 'IN',
+        ];
     }
 
     public function place(Request $request)
@@ -153,6 +186,10 @@ class CheckoutController extends Controller
 
     public function confirmation(Order $order)
     {
+        if (auth()->check() && $order->user_id === null && strcasecmp($order->customer_email, auth()->user()->email) === 0) {
+            $order->update(['user_id' => auth()->id()]);
+        }
+
         return view('shop.order-confirmation', [
             'order' => $order->load('items'),
         ]);

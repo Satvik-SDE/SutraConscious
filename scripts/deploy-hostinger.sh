@@ -78,6 +78,7 @@ echo "== Laravel maintenance =="
 mkdir -p storage/logs
 chmod -R 775 storage bootstrap/cache
 $PHP83 artisan storage:link 2>/dev/null || true
+$PHP83 artisan migrate --force
 $PHP83 artisan optimize:clear
 $PHP83 artisan config:cache
 $PHP83 artisan view:clear

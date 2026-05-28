@@ -50,6 +50,23 @@ class OrderResource extends Resource
                     Forms\Components\Textarea::make('notes')->rows(3)->columnSpanFull(),
                 ])
                 ->columns(3),
+            Forms\Components\Section::make('Shipment tracking')
+                ->schema([
+                    Forms\Components\TextInput::make('tracking_carrier')
+                        ->label('Carrier')
+                        ->placeholder('e.g. Delhivery, Blue Dart, India Post'),
+                    Forms\Components\TextInput::make('tracking_number')
+                        ->label('Tracking number'),
+                    Forms\Components\TextInput::make('tracking_url')
+                        ->label('Tracking URL')
+                        ->url()
+                        ->placeholder('https://…')
+                        ->columnSpanFull(),
+                    Forms\Components\DateTimePicker::make('shipped_at')
+                        ->label('Shipped at'),
+                ])
+                ->columns(2)
+                ->collapsed(),
         ]);
     }
 
@@ -103,6 +120,16 @@ class OrderResource extends Resource
                     Infolists\Components\TextEntry::make('razorpay_order_id')->placeholder('—')->copyable(),
                     Infolists\Components\TextEntry::make('razorpay_payment_id')->placeholder('—')->copyable(),
                 ])->columns(3)->collapsed(),
+
+            Infolists\Components\Section::make('Shipment tracking')
+                ->schema([
+                    Infolists\Components\TextEntry::make('tracking_carrier')->placeholder('—'),
+                    Infolists\Components\TextEntry::make('tracking_number')->placeholder('—')->copyable(),
+                    Infolists\Components\TextEntry::make('tracking_url')->placeholder('—')->url(fn ($state) => $state)->openUrlInNewTab(),
+                    Infolists\Components\TextEntry::make('shipped_at')->dateTime()->placeholder('—'),
+                ])
+                ->columns(2)
+                ->collapsed(),
 
             Infolists\Components\Section::make('Notes')
                 ->schema([

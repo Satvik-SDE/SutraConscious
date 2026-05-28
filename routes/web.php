@@ -1,9 +1,14 @@
 <?php
 
+use App\Http\Controllers\Shop\AccountController;
+use App\Http\Controllers\Shop\Auth\LoginController;
+use App\Http\Controllers\Shop\Auth\LogoutController;
+use App\Http\Controllers\Shop\Auth\RegisterController;
 use App\Http\Controllers\Shop\CartController;
 use App\Http\Controllers\Shop\CatalogController;
 use App\Http\Controllers\Shop\CheckoutController;
 use App\Http\Controllers\Shop\HomeController;
+use App\Http\Controllers\Shop\OrderTrackingController;
 use App\Http\Controllers\Shop\PageController;
 use App\Http\Controllers\Shop\ProductController;
 use App\Http\Controllers\SitemapController;
@@ -31,6 +36,27 @@ Route::prefix('checkout')->name('checkout.')->group(function () {
 });
 
 Route::get('/order/{order:number}/confirmation', [CheckoutController::class, 'confirmation'])->name('order.confirmation');
+
+Route::get('/track-order', [OrderTrackingController::class, 'show'])->name('orders.track');
+Route::post('/track-order', [OrderTrackingController::class, 'lookup'])->name('orders.track.lookup');
+Route::get('/orders/{order:number}/view', [OrderTrackingController::class, 'guestShow'])
+    ->name('orders.guest.show')
+    ->middleware('signed');
+
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [LoginController::class, 'show'])->name('login');
+    Route::post('/login', [LoginController::class, 'store'])->name('login.store');
+    Route::get('/register', [RegisterController::class, 'show'])->name('register');
+    Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
+});
+
+Route::post('/logout', LogoutController::class)->middleware('auth')->name('logout');
+
+Route::middleware('auth')->prefix('account')->name('account.')->group(function () {
+    Route::redirect('/', '/account/orders');
+    Route::get('/orders', [AccountController::class, 'orders'])->name('orders');
+    Route::get('/orders/{order:number}', [AccountController::class, 'order'])->name('orders.show');
+});
 
 Route::post('/webhooks/razorpay', [RazorpayWebhookController::class, 'handle'])->name('webhooks.razorpay');
 

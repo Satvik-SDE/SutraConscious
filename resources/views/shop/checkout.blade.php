@@ -5,6 +5,13 @@
         <div class="mb-10" data-reveal>
             <p class="eyebrow">Checkout</p>
             <h1 class="mt-3 font-display text-display-md text-brand-black">Almost yours.</h1>
+            @guest
+                <p class="mt-4 text-sm text-brand-black/60">
+                    <a href="{{ route('login') }}" class="text-brand-blue hover:underline">Sign in</a>
+                    for faster checkout and order history, or
+                    <a href="{{ route('orders.track') }}" class="text-brand-blue hover:underline">track a guest order</a>.
+                </p>
+            @endguest
             <div class="mt-6 flex items-center gap-3 text-xs uppercase tracking-[0.18em] text-brand-black/60">
                 <a href="{{ route('cart.show') }}" class="hover:text-brand-blue">Bag</a>
                 <span class="w-6 h-px bg-brand-black/20"></span>
@@ -26,18 +33,18 @@
                     <div class="space-y-5">
                         <div>
                             <label class="field-label">Full name</label>
-                            <input type="text" name="customer_name" value="{{ old('customer_name') }}" required class="field-input">
+                            <input type="text" name="customer_name" value="{{ old('customer_name', $defaults['customer_name'] ?? '') }}" required class="field-input">
                             @error('customer_name') <p class="text-red-600 text-xs mt-1.5">{{ $message }}</p> @enderror
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <div>
                                 <label class="field-label">Email</label>
-                                <input type="email" name="customer_email" value="{{ old('customer_email') }}" required class="field-input">
+                                <input type="email" name="customer_email" value="{{ old('customer_email', $defaults['customer_email'] ?? '') }}" required class="field-input" @auth readonly @endauth>
                                 @error('customer_email') <p class="text-red-600 text-xs mt-1.5">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="field-label">Phone</label>
-                                <input type="tel" name="customer_phone" value="{{ old('customer_phone') }}" required class="field-input">
+                                <input type="tel" name="customer_phone" value="{{ old('customer_phone', $defaults['customer_phone'] ?? '') }}" required class="field-input">
                                 @error('customer_phone') <p class="text-red-600 text-xs mt-1.5">{{ $message }}</p> @enderror
                             </div>
                         </div>
@@ -54,29 +61,29 @@
                     <div class="space-y-5">
                         <div>
                             <label class="field-label">Address line 1</label>
-                            <input type="text" name="shipping_line1" value="{{ old('shipping_line1') }}" required class="field-input">
+                            <input type="text" name="shipping_line1" value="{{ old('shipping_line1', $defaults['shipping_line1'] ?? '') }}" required class="field-input">
                             @error('shipping_line1') <p class="text-red-600 text-xs mt-1.5">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label class="field-label">Address line 2 <span class="text-brand-black/30 normal-case tracking-normal">(optional)</span></label>
-                            <input type="text" name="shipping_line2" value="{{ old('shipping_line2') }}" class="field-input">
+                            <input type="text" name="shipping_line2" value="{{ old('shipping_line2', $defaults['shipping_line2'] ?? '') }}" class="field-input">
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <div>
                                 <label class="field-label">City</label>
-                                <input type="text" name="shipping_city" value="{{ old('shipping_city') }}" required class="field-input">
+                                <input type="text" name="shipping_city" value="{{ old('shipping_city', $defaults['shipping_city'] ?? '') }}" required class="field-input">
                                 @error('shipping_city') <p class="text-red-600 text-xs mt-1.5">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="field-label">State</label>
-                                <input type="text" name="shipping_state" value="{{ old('shipping_state') }}" required class="field-input">
+                                <input type="text" name="shipping_state" value="{{ old('shipping_state', $defaults['shipping_state'] ?? '') }}" required class="field-input">
                                 @error('shipping_state') <p class="text-red-600 text-xs mt-1.5">{{ $message }}</p> @enderror
                             </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <div>
                                 <label class="field-label">Postal code</label>
-                                <input type="text" name="shipping_postal_code" value="{{ old('shipping_postal_code') }}" required class="field-input">
+                                <input type="text" name="shipping_postal_code" value="{{ old('shipping_postal_code', $defaults['shipping_postal_code'] ?? '') }}" required class="field-input">
                                 @error('shipping_postal_code') <p class="text-red-600 text-xs mt-1.5">{{ $message }}</p> @enderror
                             </div>
                             <div>

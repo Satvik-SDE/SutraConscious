@@ -12,6 +12,15 @@
             <h1 class="mt-4 font-display text-display-md text-brand-black">Thank you, {{ explode(' ', $order->customer_name)[0] }}.</h1>
             <p class="mt-3 text-brand-black/70 text-lg">Your order <span class="text-brand-blue font-medium">{{ $order->number }}</span> has been received.</p>
             <p class="mt-3 text-sm text-brand-black/60 max-w-md mx-auto">A confirmation will be sent to {{ $order->customer_email }}. We'll reach out shortly with shipping details.</p>
+
+            <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+                @auth
+                    <a href="{{ route('account.orders.show', $order) }}" class="btn-primary">View order status</a>
+                @else
+                    <a href="{{ route('orders.track') }}" class="btn-primary">Track this order</a>
+                    <a href="{{ route('register') }}" class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-blue hover:underline">Create account to save orders</a>
+                @endauth
+            </div>
         </div>
     </section>
 

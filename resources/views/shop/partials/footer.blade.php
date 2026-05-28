@@ -56,6 +56,12 @@
         <div class="md:col-span-2">
             <div class="text-[0.7rem] uppercase tracking-[0.3em] text-surface-cream/50 mb-5">Care</div>
             <ul class="space-y-3 text-sm">
+                <li><a href="{{ route('orders.track') }}" class="text-surface-cream/85 hover:text-brand-blue transition-colors">Track order</a></li>
+                @auth
+                    <li><a href="{{ route('account.orders') }}" class="text-surface-cream/85 hover:text-brand-blue transition-colors">My orders</a></li>
+                @else
+                    <li><a href="{{ route('login') }}" class="text-surface-cream/85 hover:text-brand-blue transition-colors">Sign in</a></li>
+                @endauth
                 <li><a href="{{ route('shipping-returns') }}" class="text-surface-cream/85 hover:text-brand-blue transition-colors">Shipping &amp; Returns</a></li>
                 <li><a href="{{ route('privacy') }}" class="text-surface-cream/85 hover:text-brand-blue transition-colors">Privacy</a></li>
                 <li><a href="{{ route('terms') }}" class="text-surface-cream/85 hover:text-brand-blue transition-colors">Terms</a></li>
