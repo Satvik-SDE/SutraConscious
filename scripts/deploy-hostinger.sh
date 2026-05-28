@@ -90,7 +90,7 @@ ls -la public/build/assets/
 ls -la ../public_html/build/assets/
 cat ../public_html/build/manifest.json
 
-echo "BUILD_2026-05-28-v2" > ../public_html/BUILD.txt
+echo "BUILD_2026-05-28-v3" > ../public_html/BUILD.txt
 date >> ../public_html/BUILD.txt
 
 echo "== DONE =="

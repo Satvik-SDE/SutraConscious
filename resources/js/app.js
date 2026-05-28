@@ -1,6 +1,8 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
 
+document.documentElement.classList.add('js');
+
 /* ─────────────────────────────────────────────
    Global Alpine stores
    ───────────────────────────────────────────── */
