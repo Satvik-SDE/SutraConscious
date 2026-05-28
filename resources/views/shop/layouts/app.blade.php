@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#FBFAF6">
+    <meta name="site-build" content="2026-05-28-v2">
 
     <title>{{ $title ?? 'Sutra Conscious — 100% Cotton Kurtas, Crafted in Bharat' }}</title>
     <meta name="description" content="{{ $metaDescription ?? '100% premium cotton kurtas, crafted in Bharat. Breathable, decades-of-wear, no synthetics.' }}">
