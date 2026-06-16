@@ -53,12 +53,18 @@
 
     <a href="{{ route('product.show', $product->slug) }}" class="block mt-5 focus-visible:outline-offset-4">
         @if($product->category)
-            <div class="text-[0.65rem] uppercase tracking-[0.3em] text-brand-black/45 mb-1.5">{{ $product->category->name }}</div>
+            <div class="text-[0.65rem] uppercase tracking-[0.3em] text-brand-black/45 mb-1.5">{{ $product->category->department?->name ?? $product->category->name }}</div>
         @endif
         <div class="flex items-baseline justify-between gap-3">
             <h3 class="font-medium text-brand-black group-hover:text-brand-blue transition-colors leading-tight">{{ $product->name }}</h3>
             <div class="text-brand-black font-medium whitespace-nowrap">₹{{ number_format($product->base_price) }}</div>
         </div>
+        @if($product->reviewsCount() > 0)
+            <div class="mt-2 flex items-center gap-2">
+                @include('shop.partials.star-rating', ['rating' => $product->averageRating(), 'size' => 'sm'])
+                <span class="text-[0.65rem] text-brand-black/50">({{ $product->reviewsCount() }})</span>
+            </div>
+        @endif
         @if($sizes->isNotEmpty())
             <div class="mt-2 flex items-center gap-1.5">
                 @foreach($sizes as $size)

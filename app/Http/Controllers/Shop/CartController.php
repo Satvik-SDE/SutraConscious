@@ -27,7 +27,7 @@ class CartController extends Controller
     {
         $data = $request->validate([
             'variant_id' => ['required', 'exists:product_variants,id'],
-            'quantity' => ['required', 'integer', 'min:1', 'max:10'],
+            'quantity' => ['required', 'integer', 'min:1'],
         ]);
 
         $variant = ProductVariant::with('product')->findOrFail($data['variant_id']);
@@ -36,7 +36,15 @@ class CartController extends Controller
             return back()->withErrors(['cart' => 'Sorry, this item is not available.']);
         }
 
-        $this->cart->add($variant, (int) $data['quantity']);
+        if ($variant->stock <= 0) {
+            return back()->withErrors(['cart' => 'This size is out of stock.']);
+        }
+
+        try {
+            $this->cart->add($variant, (int) $data['quantity']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
 
         return redirect()->route('cart.show')->with('status', 'Added to cart.');
     }
@@ -46,10 +54,14 @@ class CartController extends Controller
         $this->authorizeItem($item);
 
         $data = $request->validate([
-            'quantity' => ['required', 'integer', 'min:0', 'max:10'],
+            'quantity' => ['required', 'integer', 'min:0'],
         ]);
 
-        $this->cart->update($item, (int) $data['quantity']);
+        try {
+            $this->cart->update($item, (int) $data['quantity']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->route('cart.show')->withErrors($e->errors());
+        }
 
         return redirect()->route('cart.show');
     }

@@ -7,20 +7,21 @@
     <meta name="theme-color" content="#FBFAF6">
     <meta name="site-build" content="2026-05-28-v3">
 
-    <title>{{ $title ?? 'Sutra Conscious — 100% Cotton Kurtas, Crafted in Bharat' }}</title>
-    <meta name="description" content="{{ $metaDescription ?? '100% premium cotton kurtas, crafted in Bharat. Breathable, decades-of-wear, no synthetics.' }}">
+    <title>{{ $title ?? 'Sutra Conscious — Conscious Cotton Clothing, Crafted in Bharat' }}</title>
+    <meta name="description" content="{{ $metaDescription ?? '100% premium cotton clothing for men, women, and kids — crafted in Bharat. Breathable, decades-of-wear, no synthetics.' }}">
 
     <link rel="canonical" href="{{ url()->current() }}">
 
     <meta property="og:type" content="{{ $ogType ?? 'website' }}">
     <meta property="og:site_name" content="Sutra Conscious">
     <meta property="og:title" content="{{ $title ?? 'Sutra Conscious' }}">
-    <meta property="og:description" content="{{ $metaDescription ?? '100% premium cotton kurtas, crafted in Bharat.' }}">
+    <meta property="og:description" content="{{ $metaDescription ?? '100% premium cotton clothing for men, women, and kids — crafted in Bharat.' }}">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:image" content="{{ asset('img/brand/logo.png') }}">
     <meta name="twitter:card" content="summary_large_image">
 
-    <link rel="icon" type="image/png" href="{{ asset('img/brand/logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('img/brand/favicon.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('img/brand/favicon.png') }}">
 
     {{-- Preconnect for Google Fonts --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">

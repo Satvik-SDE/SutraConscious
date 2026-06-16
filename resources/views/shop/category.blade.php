@@ -1,15 +1,19 @@
 @extends('shop.layouts.app', [
     'title' => $category->name . ' — Sutra Conscious',
-    'metaDescription' => $category->description ?: '100% premium cotton kurtas in the ' . $category->name . ' collection.',
+    'metaDescription' => $category->description ?: 'Conscious cotton clothing in the ' . $category->name . ' collection.',
 ])
 
 @section('content')
     <section class="relative bg-brand-skin/50 border-b border-surface-line overflow-hidden">
         <div class="container-wide py-16 lg:py-24 relative z-10">
-            <nav class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/60 mb-6 flex items-center gap-2" aria-label="Breadcrumb">
+            <nav class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/60 mb-6 flex items-center gap-2 flex-wrap" aria-label="Breadcrumb">
                 <a href="{{ route('home') }}" class="hover:text-brand-blue">Home</a>
                 <span class="text-brand-black/30">/</span>
                 <a href="{{ route('shop') }}" class="hover:text-brand-blue">Shop</a>
+                @if($category->department)
+                    <span class="text-brand-black/30">/</span>
+                    <a href="{{ route('department.show', $category->department->slug) }}" class="hover:text-brand-blue">{{ $category->department->name }}</a>
+                @endif
                 <span class="text-brand-black/30">/</span>
                 <span class="text-brand-black">{{ $category->name }}</span>
             </nav>
@@ -29,33 +33,10 @@
 
     <section class="py-section-sm">
         <div class="container-wide grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-10 lg:gap-16">
-            <aside data-reveal="left" class="lg:sticky lg:top-28 lg:self-start space-y-8">
-                <div>
-                    <div class="eyebrow-dim mb-4">Collections</div>
-                    <ul class="space-y-3">
-                        <li>
-                            <a href="{{ route('shop') }}" class="block text-sm tracking-wide text-brand-black hover:text-brand-blue">All Kurtas</a>
-                        </li>
-                        @foreach($categories as $cat)
-                            <li>
-                                <a href="{{ route('category.show', $cat->slug) }}" class="block text-sm tracking-wide {{ $activeCategory === $cat->slug ? 'text-brand-blue font-medium' : 'text-brand-black hover:text-brand-blue' }}">
-                                    <span class="inline-flex items-center gap-2">
-                                        @if($activeCategory === $cat->slug)<span class="w-1.5 h-1.5 rounded-full bg-brand-blue"></span>@endif
-                                        {{ $cat->name }}
-                                    </span>
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-
-                <div class="rule"></div>
-
-                <div class="bg-brand-skin/30 border border-surface-line p-5">
-                    <div class="eyebrow-dim mb-2">About this collection</div>
-                    <p class="text-sm text-brand-black/75 leading-relaxed">{{ $category->description ?: '100% premium cotton, woven for everyday wear.' }}</p>
-                </div>
-            </aside>
+            @include('shop.partials.catalog-sidebar', [
+                'sidebarNoteTitle' => 'About this collection',
+                'sidebarNoteBody' => $category->description ?: '100% premium cotton, woven for everyday wear.',
+            ])
 
             <div>
                 <div class="flex items-center justify-between mb-8">

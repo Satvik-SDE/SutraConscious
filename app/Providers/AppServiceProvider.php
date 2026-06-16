@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Department;
 use App\Models\Order;
 use App\Policies\OrderPolicy;
 use App\Services\WishlistService;
@@ -35,6 +36,16 @@ class AppServiceProvider extends ServiceProvider
                 } catch (\Throwable) {
                     View::share('wishlistProductIds', []);
                     View::share('wishlistCount', 0);
+                }
+
+                try {
+                    View::share('navDepartments', Department::query()
+                        ->where('is_active', true)
+                        ->with(['activeCategories' => fn ($query) => $query->orderBy('sort_order')])
+                        ->orderBy('sort_order')
+                        ->get());
+                } catch (\Throwable) {
+                    View::share('navDepartments', collect());
                 }
             });
         }

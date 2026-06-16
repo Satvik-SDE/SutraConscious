@@ -23,7 +23,7 @@ class AccountController extends Controller
     {
         $this->authorize('view', $order);
 
-        $order->load('items');
+        $order->load(['items.variant.product']);
 
         return view('shop.account.order', [
             'order' => $order,

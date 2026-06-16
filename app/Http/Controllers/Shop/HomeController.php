@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Shop;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Department;
 use App\Models\Product;
 
 class HomeController extends Controller
@@ -29,13 +30,20 @@ class HomeController extends Controller
 
         $categories = Category::query()
             ->where('is_active', true)
-            ->with(['products' => fn ($q) => $q->where('is_active', true)->with(['images', 'variants'])->limit(4)])
+            ->with(['department', 'products' => fn ($q) => $q->where('is_active', true)->with(['images', 'variants'])->limit(4)])
+            ->orderBy('sort_order')
+            ->get();
+
+        $departments = Department::query()
+            ->where('is_active', true)
+            ->with(['activeCategories' => fn ($q) => $q->with(['products' => fn ($pq) => $pq->where('is_active', true)->with(['images', 'variants'])->limit(1)])])
             ->orderBy('sort_order')
             ->get();
 
         return view('shop.home', [
             'featured' => $featured,
             'categories' => $categories,
+            'departments' => $departments,
         ]);
     }
 }

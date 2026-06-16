@@ -4,13 +4,17 @@ namespace App\Http\Controllers\Webhooks;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Services\OrderPaymentService;
 use App\Services\RazorpayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class RazorpayWebhookController extends Controller
 {
-    public function __construct(protected RazorpayService $razorpay) {}
+    public function __construct(
+        protected RazorpayService $razorpay,
+        protected OrderPaymentService $orderPayments,
+    ) {}
 
     public function handle(Request $request)
     {
@@ -40,12 +44,7 @@ class RazorpayWebhookController extends Controller
         }
 
         if ($event === 'payment.captured' && $order->payment_status !== Order::PAYMENT_PAID) {
-            $order->update([
-                'razorpay_payment_id' => $razorpayPaymentId,
-                'payment_status' => Order::PAYMENT_PAID,
-                'status' => Order::STATUS_PROCESSING,
-                'paid_at' => now(),
-            ]);
+            $this->orderPayments->markPaid($order, $razorpayPaymentId);
         }
 
         if ($event === 'payment.failed' && $order->payment_status === Order::PAYMENT_UNPAID) {

@@ -19,13 +19,21 @@ class CategoryResource extends Resource
 
     protected static ?string $navigationGroup = 'Catalog';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?string $navigationLabel = 'Collections';
+
+    protected static ?int $navigationSort = 15;
 
     public static function form(Form $form): Form
     {
         return $form->schema([
             Forms\Components\Section::make('Collection')
                 ->schema([
+                    Forms\Components\Select::make('department_id')
+                        ->label('Shop section')
+                        ->relationship('department', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->required(),
                     Forms\Components\TextInput::make('name')
                         ->required()
                         ->maxLength(255)
@@ -44,6 +52,7 @@ class CategoryResource extends Resource
             Forms\Components\Section::make('Presentation')
                 ->schema([
                     Forms\Components\FileUpload::make('hero_image_path')
+                        ->label('Hero image')
                         ->image()
                         ->disk('public')
                         ->directory('categories')
@@ -55,6 +64,27 @@ class CategoryResource extends Resource
                         ->default(true),
                 ])
                 ->columns(2),
+
+            Forms\Components\Section::make('Size guide')
+                ->description('Default size chart for all products in this collection.')
+                ->schema([
+                    Forms\Components\FileUpload::make('size_chart_image_path')
+                        ->label('Size chart image')
+                        ->image()
+                        ->disk('public')
+                        ->directory('size-charts/categories')
+                        ->helperText('Upload a size chart image (PNG or JPG). Individual products can override this.')
+                        ->columnSpanFull(),
+                ]),
+
+            Forms\Components\Section::make('Wash care')
+                ->description('Default wash & care guidelines for products in this collection.')
+                ->schema([
+                    Forms\Components\RichEditor::make('wash_care_content')
+                        ->label('Wash care guidelines')
+                        ->helperText('Shown in the Fabric & Care section. Products can override with their own guidelines.')
+                        ->columnSpanFull(),
+                ]),
 
             Forms\Components\Section::make('SEO')
                 ->schema([
@@ -70,6 +100,10 @@ class CategoryResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('department.name')
+                    ->label('Section')
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('slug')->toggleable(),
                 Tables\Columns\TextColumn::make('products_count')
                     ->counts('products')

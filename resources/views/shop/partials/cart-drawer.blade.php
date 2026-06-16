@@ -83,8 +83,8 @@
                                         <form action="{{ route('cart.update', $item) }}" method="POST" class="inline-flex">
                                             @csrf
                                             @method('PATCH')
-                                            <input type="hidden" name="quantity" value="{{ min(10, $item->quantity + 1) }}">
-                                            <button type="submit" class="w-7 h-7 text-brand-black hover:bg-brand-skin/50">+</button>
+                                            <input type="hidden" name="quantity" value="{{ min($item->variant->stock, $item->quantity + 1) }}">
+                                            <button type="submit" class="w-7 h-7 text-brand-black hover:bg-brand-skin/50 disabled:opacity-40" @if($item->quantity >= $item->variant->stock) disabled @endif>+</button>
                                         </form>
                                     </div>
                                     <div class="text-sm font-medium text-brand-black">₹{{ number_format($item->lineTotal()) }}</div>

@@ -21,7 +21,62 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12">
+        @error('cart')
+            <div class="mb-6 text-red-600 text-sm" data-reveal>{{ $message }}</div>
+        @enderror
+
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12"
+             x-data="{
+                subtotal: {{ $cart->subtotal() }},
+                loading: false,
+                checked: false,
+                serviceable: null,
+                shippingFee: 0,
+                message: '',
+                zoneName: '',
+                get total() { return this.subtotal + (this.serviceable ? this.shippingFee : 0); },
+                get canSubmit() { return this.serviceable === true; },
+                async checkShipping() {
+                    const postal = this.$refs.postal?.value?.trim() || '';
+                    const country = this.$refs.country?.value || 'IN';
+                    const state = this.$refs.state?.value?.trim() || '';
+                    if (postal.length < 3) {
+                        this.checked = false;
+                        this.serviceable = null;
+                        this.message = 'Enter your pin / postal code to check delivery.';
+                        return;
+                    }
+                    this.loading = true;
+                    try {
+                        const res = await fetch(@js(route('checkout.shipping-quote')), {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': @js(csrf_token()),
+                            },
+                            body: JSON.stringify({
+                                shipping_postal_code: postal,
+                                shipping_country: country,
+                                shipping_state: state,
+                            }),
+                        });
+                        const data = await res.json();
+                        this.checked = true;
+                        this.serviceable = data.serviceable;
+                        this.shippingFee = data.shipping_fee ?? 0;
+                        this.message = data.message ?? '';
+                        this.zoneName = data.zone_name ?? '';
+                    } catch (e) {
+                        this.checked = true;
+                        this.serviceable = false;
+                        this.message = 'Could not check delivery. Please try again.';
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+             }"
+             x-init="$nextTick(() => { if (($refs.postal?.value || '').length >= 3) checkShipping(); })">
             <form action="{{ route('checkout.place') }}" method="POST" class="space-y-10" novalidate data-reveal>
                 @csrf
 
@@ -39,7 +94,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <div>
                                 <label class="field-label">Email</label>
-                                <input type="email" name="customer_email" value="{{ old('customer_email', $defaults['customer_email'] ?? '') }}" required class="field-input" @auth readonly @endauth>
+                                <input type="email" name="customer_email" value="{{ old('customer_email', $defaults['customer_email'] ?? '') }}" required class="field-input">
                                 @error('customer_email') <p class="text-red-600 text-xs mt-1.5">{{ $message }}</p> @enderror
                             </div>
                             <div>
@@ -76,20 +131,26 @@
                             </div>
                             <div>
                                 <label class="field-label">State</label>
-                                <input type="text" name="shipping_state" value="{{ old('shipping_state', $defaults['shipping_state'] ?? '') }}" required class="field-input">
+                                <input type="text" name="shipping_state" x-ref="state" value="{{ old('shipping_state', $defaults['shipping_state'] ?? '') }}" required class="field-input" @blur="checkShipping()">
                                 @error('shipping_state') <p class="text-red-600 text-xs mt-1.5">{{ $message }}</p> @enderror
                             </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <div>
-                                <label class="field-label">Postal code</label>
-                                <input type="text" name="shipping_postal_code" value="{{ old('shipping_postal_code', $defaults['shipping_postal_code'] ?? '') }}" required class="field-input">
+                                <label class="field-label">Postal code / Pincode</label>
+                                <input type="text" name="shipping_postal_code" x-ref="postal" value="{{ old('shipping_postal_code', $defaults['shipping_postal_code'] ?? '') }}" required class="field-input" @blur="checkShipping()" @input.debounce.500ms="checkShipping()">
                                 @error('shipping_postal_code') <p class="text-red-600 text-xs mt-1.5">{{ $message }}</p> @enderror
+                                <p class="mt-2 text-xs text-brand-black/55" x-show="loading">Checking delivery…</p>
+                                <p class="mt-2 text-xs text-brand-blue" x-show="!loading && serviceable === true" x-text="message"></p>
+                                <p class="mt-2 text-xs text-red-600" x-show="!loading && serviceable === false" x-text="message"></p>
+                                <p class="mt-2 text-xs text-brand-black/50" x-show="!loading && serviceable === null && !checked">Enter pin / postal code to see if we deliver to you.</p>
                             </div>
                             <div>
                                 <label class="field-label">Country</label>
-                                <select name="shipping_country" required class="field-input">
-                                    <option value="IN" selected>India</option>
+                                <select name="shipping_country" x-ref="country" required class="field-input" @change="checkShipping()">
+                                    @foreach($countries as $code => $label)
+                                        <option value="{{ $code }}" @selected(old('shipping_country', $defaults['shipping_country'] ?? 'IN') === $code)>{{ $label }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -107,13 +168,14 @@
                 </section>
 
                 <div class="pt-2">
-                    <button type="submit" class="btn-primary w-full sm:w-auto">
+                    <button type="submit" class="btn-primary w-full sm:w-auto" :disabled="!canSubmit" :class="!canSubmit ? 'opacity-50 cursor-not-allowed' : ''">
                         Continue to Payment
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3"/>
                         </svg>
                     </button>
-                    <p class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/40 mt-4">Secure payment · Razorpay</p>
+                    <p class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/40 mt-4" x-show="!canSubmit">Check pin / postal code above to continue</p>
+                    <p class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/40 mt-4" x-show="canSubmit">Secure payment · Razorpay</p>
                 </div>
             </form>
 
@@ -144,20 +206,28 @@
 
                     <dl class="space-y-2.5 text-sm">
                         <div class="flex justify-between"><dt class="text-brand-black/70">Subtotal</dt><dd>₹{{ number_format($cart->subtotal()) }}</dd></div>
-                        <div class="flex justify-between"><dt class="text-brand-black/70">Shipping</dt><dd class="text-brand-black/50 text-[0.7rem] uppercase tracking-[0.18em]">Calculated next</dd></div>
+                        <div class="flex justify-between">
+                            <dt class="text-brand-black/70">Shipping</dt>
+                            <dd>
+                                <span x-show="serviceable === null" class="text-brand-black/50 text-[0.7rem] uppercase tracking-[0.18em]">Enter pincode</span>
+                                <span x-show="serviceable === true && shippingFee === 0" class="text-brand-blue">Free</span>
+                                <span x-show="serviceable === true && shippingFee > 0" x-text="'₹' + shippingFee.toLocaleString('en-IN')"></span>
+                                <span x-show="serviceable === false" class="text-red-600 text-xs">Not available</span>
+                            </dd>
+                        </div>
                     </dl>
 
                     <div class="rule my-5"></div>
 
                     <div class="flex items-baseline justify-between">
                         <span class="eyebrow-dim">Total</span>
-                        <span class="font-display text-3xl text-brand-blue">₹{{ number_format($cart->subtotal()) }}</span>
+                        <span class="font-display text-3xl text-brand-blue" x-text="'₹' + total.toLocaleString('en-IN')">₹{{ number_format($cart->subtotal()) }}</span>
                     </div>
                 </div>
 
                 <ul class="mt-6 space-y-2 text-[0.72rem] text-brand-black/60 px-1">
-                    <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-brand-blue"></span>Free returns within 7 days</li>
-                    <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-brand-blue"></span>Ships across India in 4–7 business days</li>
+                    <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-brand-blue"></span>Quality-checked before dispatch</li>
+                    <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-brand-blue"></span>Worldwide shipping · India 3–7 business days</li>
                     <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-brand-blue"></span>Secure encrypted payment</li>
                 </ul>
             </aside>

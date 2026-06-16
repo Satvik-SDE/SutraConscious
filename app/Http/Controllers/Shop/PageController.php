@@ -11,11 +11,6 @@ class PageController extends Controller
         return view('shop.pages.about');
     }
 
-    public function contact()
-    {
-        return view('shop.pages.contact');
-    }
-
     public function shippingReturns()
     {
         return view('shop.pages.shipping-returns');

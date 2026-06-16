@@ -34,6 +34,15 @@
                 ['@type' => 'ListItem', 'position' => $product->category ? 4 : 3, 'name' => $product->name, 'item' => route('product.show', $product->slug)],
             ])),
         ];
+        if ($product->reviewsCount() > 0) {
+            $productLd['aggregateRating'] = [
+                '@type' => 'AggregateRating',
+                'ratingValue' => (string) $product->averageRating(),
+                'reviewCount' => (string) $product->reviewsCount(),
+                'bestRating' => '5',
+                'worstRating' => '1',
+            ];
+        }
     @endphp
     <script type="application/ld+json">{!! json_encode($productLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
     <script type="application/ld+json">{!! json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
@@ -49,9 +58,13 @@
             <a href="{{ route('shop') }}" class="hover:text-brand-blue">Shop</a>
             @if($product->category)
                 <span class="text-brand-black/30">/</span>
+                @if($product->category->department)
+                    <a href="{{ route('department.show', $product->category->department->slug) }}" class="hover:text-brand-blue">{{ $product->category->department->name }}</a>
+                    <span class="text-brand-black/30">/</span>
+                @endif
                 <a href="{{ route('category.show', $product->category->slug) }}" class="hover:text-brand-blue">{{ $product->category->name }}</a>
+                <span class="text-brand-black/30">/</span>
             @endif
-            <span class="text-brand-black/30">/</span>
             <span class="text-brand-black truncate">{{ $product->name }}</span>
         </nav>
 
@@ -118,7 +131,7 @@
             <div class="lg:col-span-5 xl:col-span-4">
                 <div class="lg:pl-4">
                     @if($product->category)
-                        <p class="eyebrow">{{ $product->category->name }}</p>
+                        <p class="eyebrow">{{ $product->category->department?->name ?? $product->category->name }}</p>
                     @endif
 
                     <h1 data-reveal class="mt-3 font-display text-display-md text-brand-black">{{ $product->name }}</h1>
@@ -131,6 +144,15 @@
                         <span class="text-3xl font-display text-brand-blue">₹{{ number_format($product->base_price) }}</span>
                         <span class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/40">incl. all taxes</span>
                     </div>
+
+                    @if($product->reviewsCount() > 0)
+                        <div data-reveal data-reveal-delay="250" class="mt-4 flex items-center gap-2">
+                            @include('shop.partials.star-rating', ['rating' => $product->averageRating(), 'size' => 'sm'])
+                            <a href="#reviews" class="text-sm text-brand-black/60 hover:text-brand-blue transition-colors">
+                                {{ number_format($product->averageRating(), 1) }} ({{ $product->reviewsCount() }})
+                            </a>
+                        </div>
+                    @endif
 
                     @if($product->short_description)
                         <p data-reveal data-reveal-delay="300" class="mt-6 text-brand-black/75 leading-relaxed">{{ $product->short_description }}</p>
@@ -147,20 +169,27 @@
 
                     {{-- Variant picker --}}
                     @if($product->variants->isNotEmpty())
-                        <form action="{{ route('cart.add') }}" method="POST" class="mt-10" x-data="{ variant: '{{ $product->variants->first()->id }}', qty: 1 }">
+                        @php
+                            $variantStocks = $product->variants->pluck('stock', 'id')->map(fn ($stock) => (int) $stock);
+                            $sizeChartUrl = $product->resolvedSizeChartImageUrl();
+                        @endphp
+                        <div x-data="{ variant: '{{ $product->variants->first()->id }}', qty: 1, stocks: @js($variantStocks), sizeGuideOpen: false }">
+                        <form action="{{ route('cart.add') }}" method="POST" class="mt-10">
                             @csrf
                             <input type="hidden" name="variant_id" :value="variant">
                             <input type="hidden" name="quantity" :value="qty">
 
                             <div class="flex items-center justify-between mb-3">
                                 <div class="field-label mb-0">Size</div>
-                                <button type="button" class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/60 hover:text-brand-blue underline underline-offset-4">Size guide</button>
+                                @if($sizeChartUrl)
+                                    <button type="button" @click="sizeGuideOpen = true" class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/60 hover:text-brand-blue underline underline-offset-4">Size guide</button>
+                                @endif
                             </div>
 
                             <div class="flex flex-wrap gap-2 mb-7">
                                 @foreach($product->variants as $variant)
                                     <button type="button"
-                                            @click="variant = '{{ $variant->id }}'"
+                                            @click="variant = '{{ $variant->id }}'; qty = Math.min(qty, stocks['{{ $variant->id }}'] || 1) || 1"
                                             class="w-12 h-12 inline-flex items-center justify-center border transition-all duration-300 ease-silk text-sm font-medium relative"
                                             :class="variant === '{{ $variant->id }}' ? 'border-brand-blue bg-brand-blue text-surface-cream' : 'border-surface-line text-brand-black hover:border-brand-blue'"
                                             @if($variant->stock <= 0) disabled @endif
@@ -176,11 +205,12 @@
                             </div>
 
                             <div class="field-label">Quantity</div>
-                            <div class="inline-flex items-center border border-surface-line mb-8 select-none">
+                            <div class="inline-flex items-center border border-surface-line mb-2 select-none">
                                 <button type="button" @click="qty = Math.max(1, qty - 1)" class="w-10 h-11 text-brand-black hover:bg-brand-skin/40 transition-colors" aria-label="Decrease">−</button>
                                 <div class="w-12 h-11 border-x border-surface-line flex items-center justify-center text-sm" x-text="qty"></div>
-                                <button type="button" @click="qty = Math.min(10, qty + 1)" class="w-10 h-11 text-brand-black hover:bg-brand-skin/40 transition-colors" aria-label="Increase">+</button>
+                                <button type="button" @click="qty = Math.min(stocks[variant] || 0, qty + 1)" :disabled="qty >= (stocks[variant] || 0)" class="w-10 h-11 text-brand-black hover:bg-brand-skin/40 transition-colors disabled:opacity-40 disabled:pointer-events-none" aria-label="Increase">+</button>
                             </div>
+                            <p class="text-[0.7rem] text-brand-black/55 mb-6" x-show="(stocks[variant] || 0) > 0" x-text="(stocks[variant] || 0) === 1 ? 'Only 1 left in stock' : (stocks[variant] || 0) + ' in stock'"></p>
 
                             @if(session('status'))
                                 <div class="mb-4 text-brand-blue text-sm flex items-center gap-2">
@@ -193,7 +223,7 @@
                             @enderror
 
                             <div class="flex flex-col gap-3">
-                                <button type="submit" class="btn-primary w-full justify-center">
+                                <button type="submit" class="btn-primary w-full justify-center" :disabled="(stocks[variant] || 0) <= 0">
                                     Add to Bag
                                     <span class="text-surface-cream/70">·</span>
                                     <span>₹<span x-text="(qty * {{ $product->base_price }}).toLocaleString('en-IN')"></span></span>
@@ -201,6 +231,14 @@
                                 <a href="{{ route('shop') }}" class="text-center text-[0.78rem] uppercase tracking-[0.2em] text-brand-black/60 hover:text-brand-blue transition-colors">Continue shopping</a>
                             </div>
                         </form>
+
+                        @if($sizeChartUrl)
+                            @include('shop.partials.size-guide-modal', [
+                                'imageUrl' => $sizeChartUrl,
+                                'title' => $product->name,
+                            ])
+                        @endif
+                        </div>
                     @else
                         <div class="mt-8 bg-brand-skin/40 border border-surface-line p-4 text-sm text-brand-black/70">
                             Sizes coming soon for this product.
@@ -211,8 +249,8 @@
                     <div class="mt-12 divide-y divide-surface-line border-y border-surface-line" x-data="{ open: 'details' }">
                         @foreach([
                             ['key' => 'details', 'title' => 'The Details', 'body' => $product->description ?: '<p>'. e($product->short_description ?: 'Thoughtfully cut from 100% premium cotton. Breathable, soft, daily-wear ready.') .'</p>'],
-                            ['key' => 'fabric',  'title' => 'Fabric &amp; Care', 'body' => '<p><strong>Fabric:</strong> '. e($product->fabric) .'</p><p class="mt-2">Wash cold with similar colours. Line dry in shade. Light iron on the reverse to retain handfeel.</p>'],
-                            ['key' => 'shipping','title' => 'Shipping &amp; Returns', 'body' => '<p>Ships across India in 4–7 business days. International shipping coming soon.</p><p class="mt-2">7-day easy exchanges. Read the <a class="text-brand-blue underline underline-offset-4" href="'. route('shipping-returns') .'">full policy</a>.</p>'],
+                            ['key' => 'fabric',  'title' => 'Fabric &amp; Care', 'body' => $product->washCareHtml()],
+                            ['key' => 'shipping','title' => 'Shipping &amp; Returns', 'body' => '<p>Worldwide shipping. India: 3–7 business days · International: 7–21 business days.</p><p class="mt-2">Every kurta is quality-checked before dispatch. Read the <a class="text-brand-blue underline underline-offset-4" href="'. route('shipping-returns') .'">full policy</a>.</p>'],
                         ] as $acc)
                             <div>
                                 <button type="button" @click="open = open === '{{ $acc['key'] }}' ? '' : '{{ $acc['key'] }}'" class="w-full flex items-center justify-between py-5 text-left">
@@ -236,6 +274,8 @@
                 </div>
             </div>
         </div>
+
+        @include('shop.partials.product-reviews')
     </section>
 
     @if($related->isNotEmpty())

@@ -4,26 +4,51 @@ namespace App\Http\Controllers\Shop;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Department;
 use App\Models\Product;
 
 class CatalogController extends Controller
 {
     public function shop()
     {
+        $departments = $this->navDepartments();
+
         $products = Product::query()
             ->where('is_active', true)
-            ->with(['images', 'category', 'variants'])
-            ->orderBy('sort_order')
-            ->get();
-
-        $categories = Category::query()
-            ->where('is_active', true)
+            ->with(['images', 'category.department', 'variants'])
+            ->withAvg('publishedReviews as published_reviews_avg_rating', 'rating')
+            ->withCount('publishedReviews as published_reviews_count')
             ->orderBy('sort_order')
             ->get();
 
         return view('shop.shop', [
             'products' => $products,
-            'categories' => $categories,
+            'departments' => $departments,
+            'activeDepartment' => null,
+            'activeCategory' => null,
+        ]);
+    }
+
+    public function department(Department $department)
+    {
+        abort_unless($department->is_active, 404);
+
+        $departments = $this->navDepartments();
+
+        $products = Product::query()
+            ->where('is_active', true)
+            ->whereHas('category', fn ($query) => $query->where('department_id', $department->id))
+            ->with(['images', 'category.department', 'variants'])
+            ->withAvg('publishedReviews as published_reviews_avg_rating', 'rating')
+            ->withCount('publishedReviews as published_reviews_count')
+            ->orderBy('sort_order')
+            ->get();
+
+        return view('shop.department', [
+            'department' => $department,
+            'products' => $products,
+            'departments' => $departments,
+            'activeDepartment' => $department->slug,
             'activeCategory' => null,
         ]);
     }
@@ -32,22 +57,32 @@ class CatalogController extends Controller
     {
         abort_unless($category->is_active, 404);
 
+        $category->load('department');
+        $departments = $this->navDepartments();
+
         $products = $category->products()
             ->where('is_active', true)
-            ->with(['images', 'variants', 'category'])
-            ->orderBy('sort_order')
-            ->get();
-
-        $categories = Category::query()
-            ->where('is_active', true)
+            ->with(['images', 'variants', 'category.department'])
+            ->withAvg('publishedReviews as published_reviews_avg_rating', 'rating')
+            ->withCount('publishedReviews as published_reviews_count')
             ->orderBy('sort_order')
             ->get();
 
         return view('shop.category', [
             'category' => $category,
             'products' => $products,
-            'categories' => $categories,
+            'departments' => $departments,
+            'activeDepartment' => $category->department?->slug,
             'activeCategory' => $category->slug,
         ]);
+    }
+
+    protected function navDepartments()
+    {
+        return Department::query()
+            ->where('is_active', true)
+            ->with(['activeCategories' => fn ($query) => $query->orderBy('sort_order')])
+            ->orderBy('sort_order')
+            ->get();
     }
 }

@@ -48,10 +48,16 @@
                     <h2 class="font-display text-2xl text-brand-black mb-6">Items</h2>
                     <ul class="divide-y divide-surface-line">
                         @foreach($order->items as $item)
+                            @php $reviewProduct = $item->variant?->product; @endphp
                             <li class="py-4 flex justify-between gap-4">
                                 <div>
                                     <div class="text-brand-black font-medium">{{ $item->product_name }}</div>
                                     <div class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/55 mt-1">{{ $item->variant_label }} · ×{{ $item->quantity }}</div>
+                                    @if($order->payment_status === \App\Models\Order::PAYMENT_PAID && $reviewProduct?->is_active)
+                                        <a href="{{ route('product.show', $reviewProduct->slug) }}#reviews" class="inline-block mt-2 text-[0.65rem] uppercase tracking-[0.18em] text-brand-blue hover:underline">
+                                            Write a review
+                                        </a>
+                                    @endif
                                 </div>
                                 <div class="text-brand-black whitespace-nowrap">₹{{ number_format($item->line_total) }}</div>
                             </li>

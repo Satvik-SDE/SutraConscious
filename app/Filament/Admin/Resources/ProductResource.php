@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\ProductResource\Pages;
 use App\Filament\Admin\Resources\ProductResource\RelationManagers;
+use App\Models\Department;
 use App\Models\Product;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -77,6 +78,29 @@ class ProductResource extends Resource
                         ->columnSpanFull(),
                 ]),
 
+            Forms\Components\Section::make('Size guide override')
+                ->description('Leave blank to use the size chart from this product\'s collection.')
+                ->schema([
+                    Forms\Components\FileUpload::make('size_chart_image_path')
+                        ->label('Size chart image')
+                        ->image()
+                        ->disk('public')
+                        ->directory('size-charts/products')
+                        ->helperText('Use only when this product needs a different size chart than its collection.')
+                        ->columnSpanFull(),
+                ])
+                ->collapsed(),
+
+            Forms\Components\Section::make('Wash care override')
+                ->description('Leave blank to use wash care guidelines from this product\'s collection.')
+                ->schema([
+                    Forms\Components\RichEditor::make('wash_care_content')
+                        ->label('Wash care guidelines')
+                        ->helperText('Use only when this product needs different care instructions.')
+                        ->columnSpanFull(),
+                ])
+                ->collapsed(),
+
             Forms\Components\Section::make('Visibility')
                 ->schema([
                     Forms\Components\Toggle::make('is_active')->default(true),
@@ -100,6 +124,10 @@ class ProductResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('category.name')->sortable()->toggleable(),
+                Tables\Columns\TextColumn::make('category.department.name')
+                    ->label('Section')
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('base_price')
                     ->money('INR', divideBy: 1)
                     ->sortable(),
@@ -114,6 +142,13 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('updated_at')->dateTime('d M Y')->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('department_id')
+                    ->label('Section')
+                    ->options(fn () => Department::query()->orderBy('sort_order')->pluck('name', 'id'))
+                    ->query(fn ($query, array $data) => $query->when(
+                        $data['value'] ?? null,
+                        fn ($q, $departmentId) => $q->whereHas('category', fn ($cat) => $cat->where('department_id', $departmentId)),
+                    )),
                 Tables\Filters\SelectFilter::make('category')->relationship('category', 'name'),
                 Tables\Filters\TernaryFilter::make('is_active'),
                 Tables\Filters\TernaryFilter::make('is_featured'),

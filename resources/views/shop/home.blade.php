@@ -19,12 +19,12 @@
                     </h1>
 
                     <p data-reveal data-reveal-delay="200" class="mt-8 text-lg lg:text-xl text-brand-black/75 max-w-xl leading-relaxed">
-                        Thoughtfully cut kurtas in 100% premium cotton — woven in Bharat, breathable in our weather, soft enough to live in for decades.
+                        Conscious cotton clothing for men, women, and kids — woven in Bharat, breathable in our weather, soft enough to live in for decades.
                     </p>
 
                     <div data-reveal data-reveal-delay="300" class="mt-10 flex flex-col sm:flex-row gap-4">
                         <a href="{{ route('shop') }}" class="btn-primary">
-                            Shop the Collection
+                            Shop All
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3"/>
                             </svg>
@@ -56,7 +56,7 @@
                             <img src="{{ $heroImageUrl }}" alt="Sutra Conscious — featured kurta" class="absolute inset-0 w-full h-full object-cover no-drag" loading="eager" fetchpriority="high">
                         @else
                             <div class="absolute inset-0 flex items-center justify-center">
-                                <img src="{{ asset('img/brand/logo.png') }}" alt="" class="w-1/2 max-w-xs opacity-80">
+                                <img src="{{ asset('img/brand/logo-transparent.png') }}" alt="" class="w-1/2 max-w-xs opacity-90">
                             </div>
                         @endif
 
@@ -83,6 +83,47 @@
 
     @include('shop.partials.trust-strip')
 
+    {{-- ─────────── SHOP SECTIONS ─────────── --}}
+    @if($departments->isNotEmpty())
+        <section class="py-section border-b border-surface-line">
+            <div class="container-wide">
+                <div class="flex items-end justify-between mb-12" data-reveal>
+                    <div>
+                        <p class="eyebrow">Shop by section</p>
+                        <h2 class="mt-3 font-display text-display-md text-brand-black">For everyone at home.</h2>
+                    </div>
+                    <a href="{{ route('shop') }}" class="link-grow hidden sm:inline-flex">View all</a>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                    @foreach($departments as $idx => $department)
+                        @php
+                            $deptImage = $department->heroImageUrl();
+                            $previewProduct = $department->activeCategories->flatMap->products->first();
+                            $previewImage = $previewProduct?->images?->first();
+                            $cardImage = $deptImage ?: ($previewImage ? \Illuminate\Support\Facades\Storage::disk('public')->url($previewImage->path) : null);
+                        @endphp
+                        <a href="{{ route('department.show', $department->slug) }}"
+                           data-reveal data-reveal-delay="{{ $idx * 80 }}"
+                           class="group relative overflow-hidden border border-surface-line bg-brand-skin/20 aspect-[4/5] flex flex-col justify-end">
+                            @if($cardImage)
+                                <img src="{{ $cardImage }}" alt="" loading="lazy" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-silk group-hover:scale-105">
+                                <div class="absolute inset-0 bg-gradient-to-t from-brand-black/70 via-brand-black/20 to-transparent"></div>
+                            @endif
+                            <div class="relative p-5 {{ $cardImage ? 'text-surface-cream' : 'text-brand-black' }}">
+                                <p class="text-[0.65rem] uppercase tracking-[0.28em] {{ $cardImage ? 'text-surface-cream/70' : 'text-brand-black/50' }}">Shop section</p>
+                                <h3 class="mt-2 font-display text-2xl">{{ $department->name }}</h3>
+                                @if($department->description)
+                                    <p class="mt-2 text-sm leading-relaxed {{ $cardImage ? 'text-surface-cream/80' : 'text-brand-black/65' }} line-clamp-2">{{ $department->description }}</p>
+                                @endif
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
     {{-- ─────────── EDITORIAL COLLECTIONS ─────────── --}}
     @foreach($categories as $catIdx => $category)
         @if($category->products->isNotEmpty())
@@ -93,7 +134,7 @@
                         <div class="lg:col-span-7" data-reveal>
                             <div class="flex items-baseline gap-4">
                                 <span class="font-script text-script-lg text-brand-blue/30">{{ str_pad((string)($catIdx + 1), 2, '0', STR_PAD_LEFT) }}</span>
-                                <p class="eyebrow">Collection</p>
+                                <p class="eyebrow">{{ $category->department?->name ?? 'Collection' }}</p>
                             </div>
                             <h2 class="mt-3 font-display text-display-lg text-brand-black">{{ $category->name }}</h2>
                             @if($category->description)

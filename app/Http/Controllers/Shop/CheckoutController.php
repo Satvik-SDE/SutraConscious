@@ -5,16 +5,22 @@ namespace App\Http\Controllers\Shop;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\ProductVariant;
 use App\Services\CartService;
+use App\Services\OrderPaymentService;
 use App\Services\RazorpayService;
+use App\Services\ShippingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CheckoutController extends Controller
 {
     public function __construct(
         protected CartService $cart,
         protected RazorpayService $razorpay,
+        protected OrderPaymentService $orderPayments,
+        protected ShippingService $shipping,
     ) {}
 
     public function show()
@@ -28,7 +34,35 @@ class CheckoutController extends Controller
         return view('shop.checkout', [
             'cart' => $cart,
             'defaults' => $this->checkoutDefaults(),
+            'countries' => $this->shipping->availableCountries(),
         ]);
+    }
+
+    public function shippingQuote(Request $request)
+    {
+        $data = $request->validate([
+            'shipping_country' => ['required', 'string', 'size:2'],
+            'shipping_postal_code' => ['required', 'string', 'max:12'],
+            'shipping_state' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $cart = $this->cart->current()->load(['items.variant.product']);
+
+        if ($cart->isEmpty()) {
+            return response()->json(['serviceable' => false, 'message' => 'Your cart is empty.'], 422);
+        }
+
+        $quote = $this->shipping->quote(
+            $data['shipping_country'],
+            $data['shipping_postal_code'],
+            $data['shipping_state'] ?? null,
+            $cart->subtotal(),
+        );
+
+        return response()->json(array_merge($quote, [
+            'subtotal' => $cart->subtotal(),
+            'total' => $cart->subtotal() + ($quote['serviceable'] ? $quote['shipping_fee'] : 0),
+        ]));
     }
 
     /** @return array<string, string|null> */
@@ -36,8 +70,8 @@ class CheckoutController extends Controller
     {
         $user = auth()->user();
 
-        if (! $user) {
-            return [];
+        if (! $user || $user->is_admin) {
+            return ['shipping_country' => 'IN'];
         }
 
         $latest = $user->orders()->latest()->first();
@@ -84,10 +118,40 @@ class CheckoutController extends Controller
             return redirect()->route('cart.show')->with('status', 'Your cart is empty.');
         }
 
-        $order = DB::transaction(function () use ($cart, $data) {
-            $subtotal = $cart->subtotal();
-            $shipping = 0;
-            $total = $subtotal + $shipping;
+        $subtotal = $cart->subtotal();
+        $quote = $this->shipping->quote(
+            $data['shipping_country'],
+            $data['shipping_postal_code'],
+            $data['shipping_state'],
+            $subtotal,
+        );
+
+        if (! $quote['serviceable']) {
+            throw ValidationException::withMessages([
+                'shipping_postal_code' => $quote['message'],
+            ]);
+        }
+
+        $shipping = $quote['shipping_fee'];
+        $total = $subtotal + $shipping;
+
+        $order = DB::transaction(function () use ($cart, $data, $subtotal, $shipping, $total) {
+            foreach ($cart->items as $item) {
+                $variant = ProductVariant::query()
+                    ->whereKey($item->product_variant_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($item->quantity > $variant->stock) {
+                    $label = $item->variant->product->name.' ('.$item->variant->label().')';
+
+                    throw ValidationException::withMessages([
+                        'cart' => $variant->stock === 0
+                            ? "{$label} is out of stock."
+                            : "Only {$variant->stock} left for {$label}. Please update your bag.",
+                    ]);
+                }
+            }
 
             $order = Order::create(array_merge($data, [
                 'number' => Order::generateNumber(),
@@ -173,13 +237,11 @@ class CheckoutController extends Controller
             return redirect()->route('checkout.pay', $order)->withErrors(['payment' => 'Payment signature could not be verified.']);
         }
 
-        $order->update([
-            'razorpay_payment_id' => $data['razorpay_payment_id'],
-            'razorpay_signature' => $data['razorpay_signature'],
-            'payment_status' => Order::PAYMENT_PAID,
-            'status' => Order::STATUS_PROCESSING,
-            'paid_at' => now(),
-        ]);
+        $this->orderPayments->markPaid(
+            $order,
+            $data['razorpay_payment_id'],
+            $data['razorpay_signature'],
+        );
 
         return redirect()->route('order.confirmation', $order);
     }

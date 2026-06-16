@@ -9,11 +9,13 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
+        User::where('email', 'sutra.conscious@gmail.com')->delete();
+
         User::updateOrCreate(
-            ['email' => 'sutra.conscious@gmail.com'],
+            ['email' => 'sutraconscious@gmail.com'],
             [
                 'name' => 'Sutra Conscious',
-                'password' => 'sutra@2026',
+                'password' => 'Maschendra@12',
                 'is_admin' => true,
                 'email_verified_at' => now(),
             ],

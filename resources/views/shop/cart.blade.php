@@ -10,6 +10,13 @@
             <a href="{{ route('shop') }}" class="link-grow hidden sm:inline-flex">Continue shopping</a>
         </div>
 
+        @if(session('status'))
+            <div class="mb-6 text-brand-blue text-sm" data-reveal>{{ session('status') }}</div>
+        @endif
+        @error('cart')
+            <div class="mb-6 text-red-600 text-sm" data-reveal>{{ $message }}</div>
+        @enderror
+
         @if($cart->isEmpty())
             <div class="bg-brand-skin/30 border border-surface-line py-20 text-center" data-reveal>
                 <div class="font-script text-6xl text-brand-blue/40">Sutra</div>
@@ -50,8 +57,8 @@
                                         <form action="{{ route('cart.update', $item) }}" method="POST" class="inline-flex">
                                             @csrf
                                             @method('PATCH')
-                                            <input type="hidden" name="quantity" value="{{ min(10, $item->quantity + 1) }}">
-                                            <button type="submit" class="w-9 h-9 text-brand-black hover:bg-brand-skin/40" aria-label="Increase">+</button>
+                                            <input type="hidden" name="quantity" value="{{ min($item->variant->stock, $item->quantity + 1) }}">
+                                            <button type="submit" class="w-9 h-9 text-brand-black hover:bg-brand-skin/40 disabled:opacity-40" aria-label="Increase" @if($item->quantity >= $item->variant->stock) disabled @endif>+</button>
                                         </form>
                                     </div>
 
@@ -103,7 +110,7 @@
                     </div>
 
                     <div class="mt-6 text-xs text-brand-black/60 leading-relaxed text-center px-4">
-                        Need help? Email <a href="mailto:sutra.conscious@gmail.com" class="text-brand-blue link-underline">sutra.conscious@gmail.com</a>
+                        Need help? Email <a href="mailto:support@sutraconscious.com" class="text-brand-blue link-underline">support@sutraconscious.com</a>
                     </div>
                 </aside>
             </div>

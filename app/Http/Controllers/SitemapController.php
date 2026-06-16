@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Department;
 use App\Models\Product;
 use Illuminate\Http\Response;
 
@@ -19,6 +20,15 @@ class SitemapController extends Controller
             ['loc' => route('privacy'), 'changefreq' => 'yearly', 'priority' => '0.3'],
             ['loc' => route('terms'), 'changefreq' => 'yearly', 'priority' => '0.3'],
         ];
+
+        foreach (Department::where('is_active', true)->get() as $department) {
+            $urls[] = [
+                'loc' => route('department.show', $department->slug),
+                'lastmod' => $department->updated_at?->toIso8601String(),
+                'changefreq' => 'weekly',
+                'priority' => '0.85',
+            ];
+        }
 
         foreach (Category::where('is_active', true)->get() as $cat) {
             $urls[] = [

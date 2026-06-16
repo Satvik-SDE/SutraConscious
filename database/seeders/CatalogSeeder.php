@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Category;
+use App\Models\Department;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
@@ -20,6 +21,8 @@ class CatalogSeeder extends Seeder
      */
     public function run(): void
     {
+        $mensWear = Department::where('slug', 'mens-wear')->first();
+
         $collections = [
             [
                 'name' => 'First Collection',
@@ -49,6 +52,7 @@ class CatalogSeeder extends Seeder
             $category = Category::updateOrCreate(
                 ['slug' => $collectionData['slug']],
                 [
+                    'department_id' => $mensWear?->id,
                     'name' => $collectionData['name'],
                     'description' => $collectionData['description'],
                     'sort_order' => $collectionData['sort_order'],

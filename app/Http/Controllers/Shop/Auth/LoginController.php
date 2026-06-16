@@ -11,10 +11,18 @@ use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
-    public function __construct(protected CustomerAccountService $accounts) {}
+    public function __construct(
+        protected CustomerAccountService $accounts,
+        protected WishlistService $wishlist,
+    ) {}
 
-    public function show()
+    public function show(Request $request)
     {
+        $redirect = $request->query('redirect');
+        if (is_string($redirect) && str_starts_with($redirect, config('app.url'))) {
+            session(['url.intended' => $redirect]);
+        }
+
         return view('shop.auth.login');
     }
 

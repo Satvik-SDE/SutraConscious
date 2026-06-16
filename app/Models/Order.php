@@ -51,11 +51,13 @@ class Order extends Model
         'tracking_url',
         'shipped_at',
         'paid_at',
+        'team_notified_at',
     ];
 
     protected $casts = [
         'shipped_at' => 'datetime',
         'paid_at' => 'datetime',
+        'team_notified_at' => 'datetime',
         'subtotal' => 'integer',
         'shipping_total' => 'integer',
         'discount_total' => 'integer',
