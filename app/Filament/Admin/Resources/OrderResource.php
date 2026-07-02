@@ -79,6 +79,8 @@ class OrderResource extends Resource
                     Infolists\Components\TextEntry::make('status')->badge(),
                     Infolists\Components\TextEntry::make('payment_status')->badge(),
                     Infolists\Components\TextEntry::make('total')->money('INR'),
+                    Infolists\Components\TextEntry::make('promo_code')->label('Promo code')->placeholder('—'),
+                    Infolists\Components\TextEntry::make('discount_total')->label('Discount')->money('INR')->placeholder('—'),
                     Infolists\Components\TextEntry::make('created_at')->dateTime(),
                     Infolists\Components\TextEntry::make('paid_at')->dateTime()->placeholder('—'),
                 ])->columns(3),

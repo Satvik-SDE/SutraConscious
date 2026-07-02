@@ -14,7 +14,7 @@ class DepartmentSeeder extends Seeder
             [
                 'name' => "Men's Wear",
                 'slug' => 'mens-wear',
-                'description' => '100% premium cotton kurtas and everyday menswear — crafted in Bharat.',
+                'description' => '100% cotton kurtas and everyday menswear — crafted in Bharat.',
                 'sort_order' => 10,
             ],
             [
@@ -34,6 +34,7 @@ class DepartmentSeeder extends Seeder
                 'slug' => 'kids-boys',
                 'description' => 'Durable cotton clothing for boys — easy wear, easy care, made in Bharat.',
                 'sort_order' => 40,
+                'size_chart_image_path' => 'size-charts/departments/kids-boys-size-guide.png',
             ],
         ];
 
@@ -43,6 +44,11 @@ class DepartmentSeeder extends Seeder
                 array_merge($data, ['is_active' => true]),
             );
         }
+
+        // Ensure kids-boys keeps its default size chart when re-seeded.
+        Department::where('slug', 'kids-boys')->update([
+            'size_chart_image_path' => 'size-charts/departments/kids-boys-size-guide.png',
+        ]);
 
         $mensWear = Department::where('slug', 'mens-wear')->first();
 

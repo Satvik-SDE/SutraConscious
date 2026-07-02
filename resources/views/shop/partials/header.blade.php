@@ -4,6 +4,9 @@
     $cartCount = $cart->itemCount();
     $wishlistCount = $wishlistCount ?? 0;
     $navDepartments = $navDepartments ?? collect();
+    $navTabSlugs = ['mens-wear', 'kids-boys'];
+    $navTabDepartments = $navDepartments->whereIn('slug', $navTabSlugs)->values();
+    $navOtherDepartments = $navDepartments->whereNotIn('slug', $navTabSlugs)->values();
 @endphp
 
 <header
@@ -11,62 +14,33 @@
     :class="$store.nav.scrolled ? 'bg-surface-cream/95 backdrop-blur-md shadow-soft' : 'bg-transparent'"
     class="sticky top-0 z-40 transition-all duration-500 ease-silk border-b border-surface-line/60"
 >
-    <div class="container-bleed flex items-center justify-between gap-6"
+    <div class="container-bleed relative flex items-center justify-between gap-6"
          :class="$store.nav.scrolled ? 'h-16' : 'h-20'"
          style="transition: height 500ms cubic-bezier(0.22, 1, 0.36, 1);">
 
-        <a href="{{ route('home') }}" class="flex items-center gap-3 group shrink-0" aria-label="Sutra Conscious home">
-            <img src="{{ asset('img/brand/logo-transparent.png') }}" alt="Sutra Conscious"
-                 class="w-auto max-w-[min(220px,52vw)] object-contain object-left transition-all duration-500 ease-silk no-drag"
-                 :class="$store.nav.scrolled ? 'h-8' : 'h-11'">
-            <span class="sr-only">Sutra Conscious</span>
-        </a>
+        <div class="flex items-center shrink-0 lg:flex-1 lg:min-w-0">
+            <a href="{{ route('home') }}" class="flex items-center gap-3 group" aria-label="Sutra Conscious home">
+                <img src="{{ asset('img/brand/logo-transparent.png') }}" alt="Sutra Conscious"
+                     class="w-auto max-w-[min(220px,52vw)] object-contain object-left transition-all duration-500 ease-silk no-drag"
+                     :class="$store.nav.scrolled ? 'h-8' : 'h-11'">
+                <span class="sr-only">Sutra Conscious</span>
+            </a>
+        </div>
 
-        <nav class="site-nav text-[0.78rem] tracking-[0.18em] uppercase">
-            <div
-                x-data="{ shopOpen: false }"
-                class="site-nav-dropdown relative"
-                @mouseenter="shopOpen = true"
-                @mouseleave="shopOpen = false"
-                @focusin="shopOpen = true"
-                @focusout="if (!$el.contains($event.relatedTarget)) shopOpen = false">
-                <button
-                    type="button"
-                    class="link-underline inline-flex items-center gap-1.5 text-brand-black hover:text-brand-blue transition-colors"
-                    :class="shopOpen ? 'text-brand-blue' : ''"
-                    @click="shopOpen = !shopOpen"
-                    aria-haspopup="true"
-                    :aria-expanded="shopOpen">
-                    Shop
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 transition-transform duration-300" :class="shopOpen ? 'rotate-180' : ''">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
-                    </svg>
-                </button>
+        <nav class="site-nav absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <a href="{{ route('shop') }}" class="site-nav-link"><span class="site-nav-text">Shop</span></a>
 
-                <div
-                    x-show="shopOpen"
-                    x-transition:enter="transition ease-out duration-200"
-                    x-transition:enter-start="opacity-0 -translate-y-1"
-                    x-transition:enter-end="opacity-100 translate-y-0"
-                    x-transition:leave="transition ease-in duration-150"
-                    x-transition:leave-start="opacity-100 translate-y-0"
-                    x-transition:leave-end="opacity-0 -translate-y-1"
-                    x-cloak
-                    class="site-nav-dropdown-panel">
-                    <div class="site-nav-dropdown-panel-inner">
-                        <a href="{{ route('shop') }}">Shop All</a>
-                        @foreach($navDepartments as $department)
-                            <a href="{{ route('department.show', $department->slug) }}">{{ $department->name }}</a>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
+            @foreach($navTabDepartments as $department)
+                <a href="{{ route('department.show', $department->slug) }}" class="site-nav-link">
+                    <span class="site-nav-text">{{ $department->name }}</span>
+                </a>
+            @endforeach
 
-            <a href="{{ route('about') }}" class="link-underline text-brand-black hover:text-brand-blue transition-colors">Our Story</a>
-            <a href="{{ route('contact') }}" class="link-underline text-brand-black hover:text-brand-blue transition-colors">Contact</a>
+            <a href="{{ route('about') }}" class="site-nav-link"><span class="site-nav-text">Our Story</span></a>
+            <a href="{{ route('contact') }}" class="site-nav-link"><span class="site-nav-text">Contact</span></a>
         </nav>
 
-        <div class="flex items-center gap-2 sm:gap-4">
+        <div class="flex items-center justify-end gap-2 sm:gap-4 shrink-0 lg:flex-1">
             @auth
                 <a href="{{ route('account.orders') }}"
                    class="hidden sm:inline-flex p-2 text-brand-black hover:text-brand-blue transition-colors"
@@ -129,7 +103,10 @@
          class="lg:hidden border-t border-surface-line bg-surface-cream max-h-[80dvh] overflow-y-auto scroll-thin">
         <nav class="container-wide py-6 flex flex-col">
             <a href="{{ route('shop') }}" class="py-3 text-brand-black text-sm uppercase tracking-[0.2em] border-b border-surface-line">Shop All</a>
-            @foreach($navDepartments as $department)
+            @foreach($navTabDepartments as $department)
+                <a href="{{ route('department.show', $department->slug) }}" class="py-3 text-brand-black text-sm uppercase tracking-[0.2em] font-medium border-b border-surface-line">{{ $department->name }}</a>
+            @endforeach
+            @foreach($navOtherDepartments as $department)
                 <div class="border-b border-surface-line">
                     <a href="{{ route('department.show', $department->slug) }}" class="block py-3 text-brand-black text-sm uppercase tracking-[0.2em] font-medium">{{ $department->name }}</a>
                     @if($department->activeCategories->isNotEmpty())

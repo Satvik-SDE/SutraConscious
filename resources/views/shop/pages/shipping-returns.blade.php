@@ -88,6 +88,11 @@
                 <h2 class="font-display text-2xl lg:text-3xl text-brand-black">Shipping Policy</h2>
                 <p class="mt-5 text-brand-black/80 leading-relaxed">We proudly ship our products worldwide.</p>
 
+                <p class="mt-6 text-brand-black/80 leading-relaxed">
+                    <strong class="font-medium text-brand-blue">Free shipping across India on orders above ₹{{ number_format(config('shipping.india.free_shipping_min', 2000)) }}.</strong>
+                    Shipping charges for your order are calculated at checkout based on your delivery pincode.
+                </p>
+
                 <h3 class="mt-10 font-display text-xl text-brand-black">Processing Time</h3>
                 <p class="mt-4 text-brand-black/80 leading-relaxed">
                     Orders are typically processed and dispatched within <strong class="font-medium text-brand-black">1–3 business days</strong> after successful payment confirmation.

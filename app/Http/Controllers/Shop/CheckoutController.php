@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Models\ProductVariant;
 use App\Services\CartService;
 use App\Services\OrderPaymentService;
+use App\Services\PromoCodeService;
 use App\Services\RazorpayService;
 use App\Services\ShippingService;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ class CheckoutController extends Controller
         protected RazorpayService $razorpay,
         protected OrderPaymentService $orderPayments,
         protected ShippingService $shipping,
+        protected PromoCodeService $promoCodes,
     ) {}
 
     public function show()
@@ -35,6 +37,7 @@ class CheckoutController extends Controller
             'cart' => $cart,
             'defaults' => $this->checkoutDefaults(),
             'countries' => $this->shipping->availableCountries(),
+            'appliedPromoCode' => $this->promoCodes->getAppliedCode(),
         ]);
     }
 
@@ -52,17 +55,110 @@ class CheckoutController extends Controller
             return response()->json(['serviceable' => false, 'message' => 'Your cart is empty.'], 422);
         }
 
-        $quote = $this->shipping->quote(
+        return response()->json($this->pricingSummary(
+            $cart,
             $data['shipping_country'],
             $data['shipping_postal_code'],
             $data['shipping_state'] ?? null,
-            $cart->subtotal(),
+        ));
+    }
+
+    public function applyPromo(Request $request)
+    {
+        $data = $request->validate([
+            'promo_code' => ['required', 'string', 'max:64'],
+            'shipping_country' => ['nullable', 'string', 'size:2'],
+            'shipping_postal_code' => ['nullable', 'string', 'max:12'],
+            'shipping_state' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $cart = $this->cart->current()->load(['items.variant.product']);
+
+        if ($cart->isEmpty()) {
+            return response()->json(['message' => 'Your cart is empty.'], 422);
+        }
+
+        $promo = $this->promoCodes->findAndValidate($data['promo_code'], $cart->subtotal());
+        $this->promoCodes->applyToSession($promo->code);
+
+        $summary = $this->pricingSummary(
+            $cart,
+            $data['shipping_country'] ?? 'IN',
+            $data['shipping_postal_code'] ?? '',
+            $data['shipping_state'] ?? null,
         );
 
-        return response()->json(array_merge($quote, [
-            'subtotal' => $cart->subtotal(),
-            'total' => $cart->subtotal() + ($quote['serviceable'] ? $quote['shipping_fee'] : 0),
+        return response()->json(array_merge($summary, [
+            'message' => 'Promo code applied.',
         ]));
+    }
+
+    public function removePromo(Request $request)
+    {
+        $data = $request->validate([
+            'shipping_country' => ['nullable', 'string', 'size:2'],
+            'shipping_postal_code' => ['nullable', 'string', 'max:12'],
+            'shipping_state' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $this->promoCodes->clearSession();
+
+        $cart = $this->cart->current()->load(['items.variant.product']);
+
+        if ($cart->isEmpty()) {
+            return response()->json(['message' => 'Promo code removed.'], 200);
+        }
+
+        return response()->json($this->pricingSummary(
+            $cart,
+            $data['shipping_country'] ?? 'IN',
+            $data['shipping_postal_code'] ?? '',
+            $data['shipping_state'] ?? null,
+        ));
+    }
+
+    /** @return array<string, mixed> */
+    protected function pricingSummary($cart, string $country, string $postal, ?string $state): array
+    {
+        $subtotal = $cart->subtotal();
+        $quote = $this->shipping->quote($country, $postal, $state, $subtotal);
+
+        $discount = 0;
+        $shipping = $quote['serviceable'] ? $quote['shipping_fee'] : 0;
+        $promoCode = null;
+        $promoLabel = null;
+        $promoError = null;
+
+        $appliedCode = $this->promoCodes->getAppliedCode();
+
+        if ($appliedCode) {
+            try {
+                $promo = $this->promoCodes->findAndValidate($appliedCode, $subtotal);
+                $applied = $this->promoCodes->apply($promo, $subtotal, $shipping);
+                $discount = $applied['discount_total'];
+                $shipping = $applied['shipping_total'];
+                $promoCode = $promo->code;
+                $promoLabel = $applied['label'];
+            } catch (ValidationException $exception) {
+                $this->promoCodes->clearSession();
+                $promoError = collect($exception->errors())->flatten()->first();
+            }
+        }
+
+        $total = $quote['serviceable']
+            ? max(1, $subtotal - $discount + $shipping)
+            : max(0, $subtotal - $discount);
+
+        return array_merge($quote, [
+            'subtotal' => $subtotal,
+            'discount_total' => $discount,
+            'shipping_total' => $shipping,
+            'shipping_fee' => $shipping,
+            'total' => $total,
+            'promo_code' => $promoCode,
+            'promo_label' => $promoLabel,
+            'promo_error' => $promoError,
+        ]);
     }
 
     /** @return array<string, string|null> */
@@ -110,6 +206,7 @@ class CheckoutController extends Controller
             'shipping_country' => ['required', 'string', 'size:2'],
             'shipping_postal_code' => ['required', 'string', 'max:12'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'accept_terms' => ['accepted'],
         ]);
 
         $cart = $this->cart->current()->load(['items.variant.product']);
@@ -118,24 +215,28 @@ class CheckoutController extends Controller
             return redirect()->route('cart.show')->with('status', 'Your cart is empty.');
         }
 
-        $subtotal = $cart->subtotal();
-        $quote = $this->shipping->quote(
+        $summary = $this->pricingSummary(
+            $cart,
             $data['shipping_country'],
             $data['shipping_postal_code'],
             $data['shipping_state'],
-            $subtotal,
         );
 
-        if (! $quote['serviceable']) {
+        if (! $summary['serviceable']) {
             throw ValidationException::withMessages([
-                'shipping_postal_code' => $quote['message'],
+                'shipping_postal_code' => $summary['message'],
             ]);
         }
 
-        $shipping = $quote['shipping_fee'];
-        $total = $subtotal + $shipping;
+        $subtotal = $summary['subtotal'];
+        $shipping = $summary['shipping_total'];
+        $discount = $summary['discount_total'];
+        $total = $summary['total'];
+        $promo = $summary['promo_code']
+            ? $this->promoCodes->findByCode($summary['promo_code'])
+            : null;
 
-        $order = DB::transaction(function () use ($cart, $data, $subtotal, $shipping, $total) {
+        $order = DB::transaction(function () use ($cart, $data, $subtotal, $shipping, $discount, $total, $promo) {
             foreach ($cart->items as $item) {
                 $variant = ProductVariant::query()
                     ->whereKey($item->product_variant_id)
@@ -153,6 +254,10 @@ class CheckoutController extends Controller
                 }
             }
 
+            if ($promo) {
+                $this->promoCodes->validate($promo, $subtotal);
+            }
+
             $order = Order::create(array_merge($data, [
                 'number' => Order::generateNumber(),
                 'user_id' => auth()->id(),
@@ -161,7 +266,9 @@ class CheckoutController extends Controller
                 'currency' => 'INR',
                 'subtotal' => $subtotal,
                 'shipping_total' => $shipping,
-                'discount_total' => 0,
+                'discount_total' => $discount,
+                'promo_code_id' => $promo?->id,
+                'promo_code' => $promo?->code,
                 'total' => $total,
             ]));
 
@@ -179,6 +286,7 @@ class CheckoutController extends Controller
             }
 
             $this->cart->clear();
+            $this->promoCodes->clearSession();
 
             return $order;
         });

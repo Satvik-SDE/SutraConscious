@@ -21,7 +21,7 @@ class SitemapController extends Controller
             ['loc' => route('terms'), 'changefreq' => 'yearly', 'priority' => '0.3'],
         ];
 
-        foreach (Department::where('is_active', true)->get() as $department) {
+        foreach (Department::query()->visibleOnStorefront()->get() as $department) {
             $urls[] = [
                 'loc' => route('department.show', $department->slug),
                 'lastmod' => $department->updated_at?->toIso8601String(),

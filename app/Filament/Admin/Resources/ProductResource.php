@@ -62,7 +62,7 @@ class ProductResource extends Resource
                         ->maxLength(255)
                         ->placeholder('e.g. Indigo, Wine'),
                     Forms\Components\TextInput::make('fabric')
-                        ->default('100% Premium Cotton')
+                        ->default('100% Cotton')
                         ->required()
                         ->maxLength(255),
                 ])

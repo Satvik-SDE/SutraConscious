@@ -1,6 +1,13 @@
+@php
+    $catImage = $products->first()?->images?->first();
+    $catImageUrl = $catImage ? \Illuminate\Support\Facades\Storage::disk('public')->url($catImage->path) : null;
+@endphp
+
 @extends('shop.layouts.app', [
-    'title' => $category->name . ' — Sutra Conscious',
-    'metaDescription' => $category->description ?: 'Conscious cotton clothing in the ' . $category->name . ' collection.',
+    'title' => ($category->seo_title ?: $category->name) . ' — Sutra Conscious',
+    'metaDescription' => $category->seo_description ?: ($category->description ?: 'Shop 100% cotton ' . $category->name . ' — conscious clothing crafted in Bharat.'),
+    'ogImage' => $catImageUrl,
+    'ogImageAlt' => $category->name,
 ])
 
 @section('content')
@@ -35,7 +42,7 @@
         <div class="container-wide grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-10 lg:gap-16">
             @include('shop.partials.catalog-sidebar', [
                 'sidebarNoteTitle' => 'About this collection',
-                'sidebarNoteBody' => $category->description ?: '100% premium cotton, woven for everyday wear.',
+                'sidebarNoteBody' => $category->description ?: '100% cotton, woven for everyday wear.',
             ])
 
             <div>

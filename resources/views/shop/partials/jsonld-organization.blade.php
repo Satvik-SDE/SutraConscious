@@ -7,7 +7,7 @@
         'logo' => asset('img/brand/logo.png'),
         'email' => 'support@sutraconscious.com',
         'telephone' => '+91 93215 39748',
-        'description' => '100% premium cotton kurtas crafted in Bharat. From soil, to skin, to soil.',
+        'description' => '100% cotton kurtas crafted in Bharat. From soil, to skin, to soil.',
         'sameAs' => [
             'https://www.instagram.com/sutraconscious/',
         ],

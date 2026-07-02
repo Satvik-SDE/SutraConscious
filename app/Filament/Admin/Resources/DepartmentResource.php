@@ -64,6 +64,18 @@ class DepartmentResource extends Resource
                 ])
                 ->columns(2),
 
+            Forms\Components\Section::make('Size guide')
+                ->description('Default size chart for all collections in this shop section.')
+                ->schema([
+                    Forms\Components\FileUpload::make('size_chart_image_path')
+                        ->label('Size chart image')
+                        ->image()
+                        ->disk('public')
+                        ->directory('size-charts/departments')
+                        ->helperText('Kids sections use age-based sizing (0–1 year through 11–12 years).')
+                        ->columnSpanFull(),
+                ]),
+
             Forms\Components\Section::make('SEO')
                 ->schema([
                     Forms\Components\TextInput::make('seo_title')->maxLength(255),

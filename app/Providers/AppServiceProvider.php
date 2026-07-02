@@ -39,11 +39,7 @@ class AppServiceProvider extends ServiceProvider
                 }
 
                 try {
-                    View::share('navDepartments', Department::query()
-                        ->where('is_active', true)
-                        ->with(['activeCategories' => fn ($query) => $query->orderBy('sort_order')])
-                        ->orderBy('sort_order')
-                        ->get());
+                    View::share('navDepartments', Department::forStorefront());
                 } catch (\Throwable) {
                     View::share('navDepartments', collect());
                 }

@@ -5,12 +5,15 @@ namespace App\Services;
 use App\Mail\NewPaidOrderMail;
 use App\Models\Order;
 use App\Models\ProductVariant;
+use App\Services\PromoCodeService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class OrderPaymentService
 {
+    public function __construct(protected PromoCodeService $promoCodes) {}
+
     public function markPaid(
         Order $order,
         ?string $razorpayPaymentId = null,
@@ -79,6 +82,7 @@ class OrderPaymentService
         });
 
         if ($marked) {
+            $this->promoCodes->recordUsage($order->fresh());
             $this->notifyProcessingTeam($order->fresh(['items']));
         }
 

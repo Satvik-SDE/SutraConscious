@@ -1,6 +1,6 @@
 @extends('shop.layouts.app', [
-    'title' => 'Shop — Sutra Conscious',
-    'metaDescription' => 'Browse conscious cotton clothing for men, women, and kids — crafted in Bharat.',
+    'title' => 'Shop All — 100% Cotton Kurtas & Clothing — Sutra Conscious',
+    'metaDescription' => 'Browse 100% cotton kurtas and clothing for men, women, and kids — crafted in Bharat. Breathable, skin-friendly, made to last.',
 ])
 
 @section('content')
@@ -8,7 +8,7 @@
         <div class="container-wide py-16 lg:py-24 relative z-10">
             <p data-reveal class="eyebrow">The Collection</p>
             <h1 data-reveal data-reveal-delay="100" class="mt-4 font-display text-display-lg text-brand-black max-w-3xl">Shop All</h1>
-            <p data-reveal data-reveal-delay="200" class="mt-5 max-w-xl text-brand-black/70 text-lg">100% premium cotton for men, women, and kids — crafted in Bharat.</p>
+            <p data-reveal data-reveal-delay="200" class="mt-5 max-w-xl text-brand-black/70 text-lg">100% cotton for men, women, and kids — crafted in Bharat.</p>
         </div>
         <div aria-hidden="true" class="hidden lg:block absolute -bottom-10 -right-6 font-script text-[16rem] text-brand-blue/10 select-none">Sutra</div>
     </section>

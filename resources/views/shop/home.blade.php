@@ -1,9 +1,26 @@
-@extends('shop.layouts.app')
-
 @php
     $heroImage = $featured->first()?->images?->first();
     $heroImageUrl = $heroImage ? \Illuminate\Support\Facades\Storage::disk('public')->url($heroImage->path) : null;
 @endphp
+
+@extends('shop.layouts.app', [
+    'title' => 'Sutra Conscious — 100% Cotton Kurtas & Clothing, Crafted in Bharat',
+    'metaDescription' => 'Shop 100% cotton kurtas and clothing for men, women, and kids — crafted in Bharat. Breathable, skin-friendly, made to last. Free shipping across India on orders above ₹2,000.',
+    'ogImage' => $heroImageUrl,
+])
+
+@push('head')
+    @php
+        $websiteLd = [
+            '@context' => 'https://schema.org',
+            '@type' => 'WebSite',
+            'name' => 'Sutra Conscious',
+            'url' => url('/'),
+            'description' => '100% cotton kurtas and clothing for men, women, and kids — crafted in Bharat.',
+        ];
+    @endphp
+    <script type="application/ld+json">{!! json_encode($websiteLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+@endpush
 
 @section('content')
     {{-- ─────────── HERO ─────────── --}}
@@ -11,7 +28,7 @@
         <div class="container-bleed pt-12 lg:pt-20 pb-12 lg:pb-24">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
                 <div class="lg:col-span-6 lg:col-start-1 relative z-10">
-                    <p data-reveal class="eyebrow">100% Premium Cotton · Bharat</p>
+                    <p data-reveal class="eyebrow">100% Cotton · Bharat</p>
 
                     <h1 data-reveal data-reveal-delay="100" class="mt-6 font-display text-display-xl text-brand-black">
                         Conscious cotton,
@@ -19,7 +36,13 @@
                     </h1>
 
                     <p data-reveal data-reveal-delay="200" class="mt-8 text-lg lg:text-xl text-brand-black/75 max-w-xl leading-relaxed">
-                        Conscious cotton clothing for men, women, and kids — woven in Bharat, breathable in our weather, soft enough to live in for decades.
+                        Conscious cotton clothing for men, women, and kids — woven in Bharat with an
+                        <span class="text-brand-blue font-medium">earthy feel</span>,
+                        <span class="text-brand-blue font-medium">soft hand</span>, and
+                        <span class="text-brand-blue font-medium">skin-friendly</span> comfort.
+                        Breathable in our weather, alive with
+                        <span class="text-brand-blue font-medium">vibrant prints</span>,
+                        and soft enough to live in for decades.
                     </p>
 
                     <div data-reveal data-reveal-delay="300" class="mt-10 flex flex-col sm:flex-row gap-4">
@@ -66,9 +89,6 @@
                             <div class="text-sm font-medium text-brand-black">{{ $featured->first()?->name ?? 'Featured Kurta' }}</div>
                         </div>
                     </div>
-
-                    {{-- Decorative script accent --}}
-                    <div aria-hidden="true" class="hidden lg:block absolute -bottom-6 -left-12 font-script text-9xl text-brand-blue/15 select-none">सूत्र</div>
                 </div>
             </div>
         </div>
@@ -169,10 +189,6 @@
 
     {{-- ─────────── BRAND STORY / SUTRA ─────────── --}}
     <section class="relative bg-brand-black text-surface-cream py-section overflow-hidden">
-        <div aria-hidden="true" class="absolute inset-0 opacity-10 pointer-events-none">
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-script text-[20rem] lg:text-[28rem] text-brand-blue select-none whitespace-nowrap">सूत्र</div>
-        </div>
-
         <div class="container-narrow text-center relative z-10">
             <p data-reveal class="eyebrow text-brand-skin">The Sutra</p>
             <h2 data-reveal data-reveal-delay="100" class="mt-6 font-script text-script-xl text-brand-blue">From soil, to skin,<br>to soil.</h2>

@@ -9,8 +9,6 @@
                 <p class="mt-6 text-brand-black/70 text-lg leading-relaxed max-w-md">
                     We're a small, hands-on team. Send us a note below — we read everything.
                 </p>
-
-                <div class="mt-12 font-script text-script-lg text-brand-blue/80 leading-none">सूत्र</div>
             </div>
 
             <div class="lg:col-span-7 space-y-10" data-reveal data-reveal-delay="200">

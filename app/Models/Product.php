@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Sizing;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -56,8 +57,26 @@ class Product extends Model
 
     public function variants(): HasMany
     {
-        return $this->hasMany(ProductVariant::class)
-            ->orderByRaw("CASE size WHEN 'S' THEN 1 WHEN 'M' THEN 2 WHEN 'L' THEN 3 WHEN 'XL' THEN 4 ELSE 5 END");
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    public function orderedVariants()
+    {
+        $order = Sizing::sizeOrder($this->category?->department);
+
+        return $this->variants
+            ->sortBy(fn (ProductVariant $variant) => array_search($variant->size, $order, true) ?? 999)
+            ->values();
+    }
+
+    public function usesAgeSizing(): bool
+    {
+        return Sizing::departmentUsesAgeSizing($this->category?->department);
+    }
+
+    public function sizePickerLabel(): string
+    {
+        return Sizing::sizePickerLabel($this->category?->department);
     }
 
     public function images(): HasMany
@@ -102,13 +121,24 @@ class Product extends Model
         return '₹' . number_format($this->base_price);
     }
 
+    public function displayFabric(): string
+    {
+        $fabric = preg_replace('/\bpremium\s+/i', '', $this->fabric ?? '');
+
+        return trim($fabric) ?: '100% Cotton';
+    }
+
     public function resolvedSizeChartImagePath(): ?string
     {
         if ($this->size_chart_image_path) {
             return $this->size_chart_image_path;
         }
 
-        return $this->category?->size_chart_image_path;
+        if ($this->category?->size_chart_image_path) {
+            return $this->category->size_chart_image_path;
+        }
+
+        return $this->category?->department?->size_chart_image_path;
     }
 
     public function resolvedSizeChartImageUrl(): ?string
@@ -129,7 +159,7 @@ class Product extends Model
 
     public function washCareHtml(): string
     {
-        $fabric = '<p><strong>Fabric:</strong> '.e($this->fabric).'</p>';
+        $fabric = '<p><strong>Fabric:</strong> '.e($this->displayFabric()).'</p>';
         $content = $this->resolvedWashCareContent();
 
         if ($content) {

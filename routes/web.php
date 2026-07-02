@@ -42,6 +42,8 @@ Route::prefix('cart')->name('cart.')->group(function () {
 Route::prefix('checkout')->name('checkout.')->group(function () {
     Route::get('/', [CheckoutController::class, 'show'])->name('show');
     Route::post('/shipping-quote', [CheckoutController::class, 'shippingQuote'])->name('shipping-quote');
+    Route::post('/promo/apply', [CheckoutController::class, 'applyPromo'])->name('promo.apply');
+    Route::post('/promo/remove', [CheckoutController::class, 'removePromo'])->name('promo.remove');
     Route::post('/place-order', [CheckoutController::class, 'place'])->name('place');
     Route::get('/pay/{order:number}', [CheckoutController::class, 'pay'])->name('pay');
     Route::post('/verify/{order:number}', [CheckoutController::class, 'verify'])->name('verify');

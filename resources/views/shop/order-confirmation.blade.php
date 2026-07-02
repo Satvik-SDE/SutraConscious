@@ -42,6 +42,26 @@
                 @endforeach
             </ul>
             <div class="rule my-5"></div>
+            <dl class="space-y-2.5 text-sm">
+                <div class="flex justify-between"><dt class="text-brand-black/70">Subtotal</dt><dd>₹{{ number_format($order->subtotal) }}</dd></div>
+                @if($order->discount_total > 0)
+                    <div class="flex justify-between">
+                        <dt class="text-brand-black/70">Discount@if($order->promo_code) ({{ $order->promo_code }})@endif</dt>
+                        <dd class="text-brand-blue">−₹{{ number_format($order->discount_total) }}</dd>
+                    </div>
+                @endif
+                @if($order->promo_code && $order->discount_total === 0 && $order->shipping_total === 0)
+                    <div class="flex justify-between">
+                        <dt class="text-brand-black/70">Promo ({{ $order->promo_code }})</dt>
+                        <dd class="text-brand-blue">Free shipping</dd>
+                    </div>
+                @endif
+                <div class="flex justify-between">
+                    <dt class="text-brand-black/70">Shipping</dt>
+                    <dd>₹{{ number_format($order->shipping_total) }}</dd>
+                </div>
+            </dl>
+            <div class="rule my-5"></div>
             <div class="flex items-baseline justify-between">
                 <span class="eyebrow-dim">Total</span>
                 <span class="font-display text-3xl text-brand-blue">₹{{ number_format($order->total) }}</span>

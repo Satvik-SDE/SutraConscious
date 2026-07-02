@@ -74,7 +74,7 @@
         <div class="rule"></div>
         <div class="bg-brand-skin/30 border border-surface-line p-5">
             <div class="eyebrow-dim mb-2">Fabric Pledge</div>
-            <p class="text-sm text-brand-black/75 leading-relaxed">Every Sutra Conscious piece is 100% premium cotton. No blends. No synthetics. Ever.</p>
+            <p class="text-sm text-brand-black/75 leading-relaxed">Every Sutra Conscious piece is 100% cotton. No blends. No synthetics. Ever.</p>
         </div>
     @endif
 

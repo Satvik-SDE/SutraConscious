@@ -27,7 +27,7 @@ class CatalogSeeder extends Seeder
             [
                 'name' => 'First Collection',
                 'slug' => 'first-collection',
-                'description' => 'Our debut release — modern cuts in 100% premium cotton, woven for everyday wear.',
+                'description' => 'Our debut release — modern cuts in 100% cotton, woven for everyday wear.',
                 'sort_order' => 10,
                 'source_dir' => base_path('references/Product Catalogue Photos/First collection launch'),
                 'base_price' => 1499,
@@ -80,8 +80,8 @@ class CatalogSeeder extends Seeder
                     [
                         'category_id' => $category->id,
                         'name' => $name,
-                        'short_description' => '100% Premium Cotton kurta. Breathable, soft, soil-to-soil.',
-                        'fabric' => '100% Premium Cotton',
+                        'short_description' => '100% Cotton kurta. Breathable, soft, soil-to-soil.',
+                        'fabric' => '100% Cotton',
                         'sleeve' => 'Full Sleeve',
                         'base_price' => $collectionData['base_price'],
                         'currency' => 'INR',

@@ -1,6 +1,14 @@
+@php
+    $deptImage = $products->first()?->images?->first();
+    $deptImageUrl = $department->heroImageUrl()
+        ?: ($deptImage ? \Illuminate\Support\Facades\Storage::disk('public')->url($deptImage->path) : null);
+@endphp
+
 @extends('shop.layouts.app', [
     'title' => ($department->seo_title ?: $department->name) . ' — Sutra Conscious',
-    'metaDescription' => $department->seo_description ?: ($department->description ?: 'Shop conscious cotton clothing at Sutra Conscious.'),
+    'metaDescription' => $department->seo_description ?: ($department->description ?: 'Shop conscious 100% cotton clothing at Sutra Conscious.'),
+    'ogImage' => $deptImageUrl,
+    'ogImageAlt' => $department->name,
 ])
 
 @section('content')

@@ -6,7 +6,7 @@ use App\Models\ShippingZone;
 
 class ShippingService
 {
-    /** @return array{serviceable: bool, shipping_fee: int, zone_name: ?string, message: string, free_shipping_applied: bool} */
+    /** @return array{serviceable: bool, shipping_fee: int, zone_name: ?string, message: string, free_shipping_applied: bool, free_shipping_min: ?int, amount_until_free_shipping: ?int, is_maharashtra: ?bool} */
     public function quote(string $countryCode, string $postalCode, ?string $state, int $subtotal): array
     {
         $countryCode = strtoupper(trim($countryCode));
@@ -54,15 +54,29 @@ class ShippingService
 
         $fee = $best->shipping_fee;
         $freeApplied = false;
+        $freeMin = $best->free_shipping_min;
+        $isMaharashtra = null;
+        $amountUntilFree = null;
 
-        if ($best->free_shipping_min !== null && $subtotal >= $best->free_shipping_min) {
+        if ($countryCode === 'IN') {
+            $isMaharashtra = $this->isMaharashtra($postalCode, $state);
+            $fee = $isMaharashtra
+                ? (int) config('shipping.india.fee_maharashtra', 59)
+                : (int) config('shipping.india.fee_outside_maharashtra', 99);
+            $freeMin = (int) config('shipping.india.free_shipping_min', 2000);
+
+            if ($subtotal >= $freeMin) {
+                $fee = 0;
+                $freeApplied = true;
+            } else {
+                $amountUntilFree = $freeMin - $subtotal;
+            }
+        } elseif ($freeMin !== null && $subtotal >= $freeMin) {
             $fee = 0;
             $freeApplied = true;
         }
 
-        $message = $freeApplied
-            ? 'Free shipping applied for your order total.'
-            : 'We deliver to your location.';
+        $message = $this->deliveryMessage($countryCode, $freeApplied, $freeMin, $isMaharashtra, $amountUntilFree);
 
         return [
             'serviceable' => true,
@@ -70,7 +84,65 @@ class ShippingService
             'zone_name' => $best->name,
             'message' => $message,
             'free_shipping_applied' => $freeApplied,
+            'free_shipping_min' => $freeMin,
+            'amount_until_free_shipping' => $amountUntilFree,
+            'is_maharashtra' => $isMaharashtra,
         ];
+    }
+
+    public function isMaharashtra(string $postalCode, ?string $state): bool
+    {
+        $postalCode = $this->normalizePostal($postalCode);
+
+        if (preg_match('/^\d{6}$/', $postalCode)) {
+            $prefix3 = (int) substr($postalCode, 0, 3);
+
+            if ($prefix3 === 403) {
+                return false;
+            }
+
+            return ($prefix3 >= 400 && $prefix3 <= 402)
+                || ($prefix3 >= 404 && $prefix3 <= 445);
+        }
+
+        if ($state !== null) {
+            $normalized = strtolower(trim($state));
+
+            return in_array($normalized, ['maharashtra', 'mh'], true);
+        }
+
+        return false;
+    }
+
+    protected function deliveryMessage(
+        string $countryCode,
+        bool $freeApplied,
+        ?int $freeMin,
+        ?bool $isMaharashtra,
+        ?int $amountUntilFree,
+    ): string {
+        if ($countryCode !== 'IN') {
+            return $freeApplied
+                ? 'Free shipping applied for your order total.'
+                : 'We deliver to your location.';
+        }
+
+        if ($freeApplied) {
+            return 'Free shipping applied — your order is above ₹'.number_format((int) $freeMin).'.';
+        }
+
+        $region = $isMaharashtra ? 'Maharashtra' : 'India';
+        $fee = $isMaharashtra
+            ? (int) config('shipping.india.fee_maharashtra', 59)
+            : (int) config('shipping.india.fee_outside_maharashtra', 99);
+
+        $message = "We deliver within {$region}. Shipping ₹{$fee}.";
+
+        if ($amountUntilFree !== null && $amountUntilFree > 0) {
+            $message .= ' Add order for ₹'.number_format($amountUntilFree).' or more to get shipping free.';
+        }
+
+        return $message;
     }
 
     protected function matchScore(ShippingZone $zone, string $postalCode, ?string $state): int
@@ -88,7 +160,7 @@ class ShippingService
         };
     }
 
-    /** @return array{serviceable: bool, shipping_fee: int, zone_name: ?string, message: string, free_shipping_applied: bool} */
+    /** @return array{serviceable: bool, shipping_fee: int, zone_name: ?string, message: string, free_shipping_applied: bool, free_shipping_min: ?int, amount_until_free_shipping: ?int, is_maharashtra: ?bool} */
     protected function unserviceable(string $message): array
     {
         return [
@@ -97,6 +169,9 @@ class ShippingService
             'zone_name' => null,
             'message' => $message,
             'free_shipping_applied' => false,
+            'free_shipping_min' => null,
+            'amount_until_free_shipping' => null,
+            'is_maharashtra' => null,
         ];
     }
 

@@ -39,6 +39,9 @@ Open in admin
 @endcomponent
 
 **Subtotal:** ₹{{ number_format($order->subtotal) }}  
+@if($order->discount_total > 0)
+**Discount{{ $order->promo_code ? ' ('.$order->promo_code.')' : '' }}:** −₹{{ number_format($order->discount_total) }}  
+@endif
 **Shipping:** ₹{{ number_format($order->shipping_total) }}  
 **Total:** ₹{{ number_format($order->total) }}
 

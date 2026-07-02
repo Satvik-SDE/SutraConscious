@@ -31,7 +31,7 @@ class CatalogController extends Controller
 
     public function department(Department $department)
     {
-        abort_unless($department->is_active, 404);
+        abort_unless($department->isVisibleOnStorefront(), 404);
 
         $departments = $this->navDepartments();
 
@@ -79,10 +79,6 @@ class CatalogController extends Controller
 
     protected function navDepartments()
     {
-        return Department::query()
-            ->where('is_active', true)
-            ->with(['activeCategories' => fn ($query) => $query->orderBy('sort_order')])
-            ->orderBy('sort_order')
-            ->get();
+        return Department::forStorefront();
     }
 }

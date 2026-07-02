@@ -29,13 +29,49 @@
              x-data="{
                 subtotal: {{ $cart->subtotal() }},
                 loading: false,
+                promoLoading: false,
                 checked: false,
+                termsAccepted: @js((bool) old('accept_terms')),
                 serviceable: null,
                 shippingFee: 0,
+                discount: 0,
+                promoInput: @js($appliedPromoCode ?? ''),
+                promoCode: @js($appliedPromoCode),
+                promoLabel: '',
+                promoMessage: '',
+                promoError: '',
                 message: '',
                 zoneName: '',
-                get total() { return this.subtotal + (this.serviceable ? this.shippingFee : 0); },
-                get canSubmit() { return this.serviceable === true; },
+                amountUntilFreeShipping: null,
+                freeShippingApplied: false,
+                freeShippingMin: {{ (int) config('shipping.india.free_shipping_min', 2000) }},
+                get total() {
+                    const ship = this.serviceable ? this.shippingFee : 0;
+                    return Math.max(0, this.subtotal - this.discount + ship);
+                },
+                get canSubmit() { return this.serviceable === true && this.termsAccepted; },
+                get orderAmountForFreeShipping() {
+                    return Math.max(0, this.freeShippingMin - this.subtotal);
+                },
+                shippingPayload() {
+                    return {
+                        shipping_postal_code: this.$refs.postal?.value?.trim() || '',
+                        shipping_country: this.$refs.country?.value || 'IN',
+                        shipping_state: this.$refs.state?.value?.trim() || '',
+                    };
+                },
+                applyPricing(data) {
+                    this.serviceable = data.serviceable ?? this.serviceable;
+                    this.shippingFee = data.shipping_fee ?? data.shipping_total ?? 0;
+                    this.discount = data.discount_total ?? 0;
+                    this.promoCode = data.promo_code ?? null;
+                    this.promoLabel = data.promo_label ?? '';
+                    this.promoError = data.promo_error ?? '';
+                    if (data.message && data.serviceable !== undefined) this.message = data.message;
+                    if (data.zone_name !== undefined) this.zoneName = data.zone_name ?? '';
+                    this.amountUntilFreeShipping = data.amount_until_free_shipping ?? null;
+                    this.freeShippingApplied = data.free_shipping_applied ?? false;
+                },
                 async checkShipping() {
                     const postal = this.$refs.postal?.value?.trim() || '';
                     const country = this.$refs.country?.value || 'IN';
@@ -55,18 +91,11 @@
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': @js(csrf_token()),
                             },
-                            body: JSON.stringify({
-                                shipping_postal_code: postal,
-                                shipping_country: country,
-                                shipping_state: state,
-                            }),
+                            body: JSON.stringify(this.shippingPayload()),
                         });
                         const data = await res.json();
                         this.checked = true;
-                        this.serviceable = data.serviceable;
-                        this.shippingFee = data.shipping_fee ?? 0;
-                        this.message = data.message ?? '';
-                        this.zoneName = data.zone_name ?? '';
+                        this.applyPricing(data);
                     } catch (e) {
                         this.checked = true;
                         this.serviceable = false;
@@ -74,9 +103,65 @@
                     } finally {
                         this.loading = false;
                     }
+                },
+                async applyPromo() {
+                    const code = (this.promoInput || '').trim();
+                    if (!code) return;
+                    this.promoLoading = true;
+                    this.promoError = '';
+                    this.promoMessage = '';
+                    try {
+                        const res = await fetch(@js(route('checkout.promo.apply')), {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': @js(csrf_token()),
+                            },
+                            body: JSON.stringify({ promo_code: code, ...this.shippingPayload() }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) {
+                            this.promoError = data.message || Object.values(data.errors || {}).flat()[0] || 'Could not apply promo code.';
+                            return;
+                        }
+                        this.applyPricing(data);
+                        this.promoInput = data.promo_code || code;
+                        this.promoMessage = data.message || 'Promo code applied.';
+                    } catch (e) {
+                        this.promoError = 'Could not apply promo code. Please try again.';
+                    } finally {
+                        this.promoLoading = false;
+                    }
+                },
+                async removePromo() {
+                    this.promoLoading = true;
+                    this.promoError = '';
+                    this.promoMessage = '';
+                    try {
+                        const res = await fetch(@js(route('checkout.promo.remove')), {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': @js(csrf_token()),
+                            },
+                            body: JSON.stringify(this.shippingPayload()),
+                        });
+                        const data = await res.json();
+                        this.promoCode = null;
+                        this.promoLabel = '';
+                        this.promoInput = '';
+                        this.discount = 0;
+                        this.applyPricing(data);
+                    } catch (e) {
+                        this.promoError = 'Could not remove promo code.';
+                    } finally {
+                        this.promoLoading = false;
+                    }
                 }
              }"
-             x-init="$nextTick(() => { if (($refs.postal?.value || '').length >= 3) checkShipping(); })">
+             x-init="$nextTick(() => { if (($refs.postal?.value || '').length >= 3) checkShipping(); else if (promoCode) applyPromo(); })">
             <form action="{{ route('checkout.place') }}" method="POST" class="space-y-10" novalidate data-reveal>
                 @csrf
 
@@ -167,6 +252,25 @@
                     <textarea name="notes" rows="3" placeholder="Gift wrap, delivery instructions, anything else?" class="field-input">{{ old('notes') }}</textarea>
                 </section>
 
+                <div class="rule"></div>
+
+                <section>
+                    <div class="flex items-baseline justify-between mb-6">
+                        <h2 class="font-display text-2xl text-brand-black">Terms</h2>
+                        <span class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/40">04</span>
+                    </div>
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" name="accept_terms" value="1" class="mt-1 rounded border-surface-line text-brand-blue focus:ring-brand-blue" x-model="termsAccepted" @checked(old('accept_terms'))>
+                        <span class="text-sm text-brand-black/75 leading-relaxed">
+                            I agree to the
+                            <a href="{{ route('shipping-returns') }}" class="text-brand-blue hover:underline" target="_blank">shipping &amp; returns policy</a>
+                            and
+                            <a href="{{ route('privacy') }}" class="text-brand-blue hover:underline" target="_blank">privacy policy</a>.
+                        </span>
+                    </label>
+                    @error('accept_terms') <p class="text-red-600 text-xs mt-2">{{ $message }}</p> @enderror
+                </section>
+
                 <div class="pt-2">
                     <button type="submit" class="btn-primary w-full sm:w-auto" :disabled="!canSubmit" :class="!canSubmit ? 'opacity-50 cursor-not-allowed' : ''">
                         Continue to Payment
@@ -174,12 +278,18 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3"/>
                         </svg>
                     </button>
-                    <p class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/40 mt-4" x-show="!canSubmit">Check pin / postal code above to continue</p>
+                    <p class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/40 mt-4" x-show="!canSubmit && serviceable !== true">Check pin / postal code above to continue</p>
+                    <p class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/40 mt-4" x-show="serviceable === true && !termsAccepted">Please agree to the terms and policies to continue</p>
                     <p class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/40 mt-4" x-show="canSubmit">Secure payment · Razorpay</p>
                 </div>
             </form>
 
             <aside class="lg:sticky lg:top-28 lg:self-start" data-reveal="right">
+                <div class="mb-4 bg-brand-blue/10 border border-brand-blue/20 px-4 py-3 text-sm text-brand-black/80" x-show="($refs.country?.value || 'IN') === 'IN'">
+                    <span class="font-medium text-brand-blue">Free shipping across India</span>
+                    on orders above ₹{{ number_format(config('shipping.india.free_shipping_min', 2000)) }}.
+                </div>
+
                 <div class="bg-brand-skin/30 border border-surface-line p-7">
                     <p class="eyebrow-dim">Your bag</p>
                     <div class="mt-6 space-y-5 max-h-[440px] overflow-y-auto pr-2 scroll-thin">
@@ -204,8 +314,42 @@
 
                     <div class="rule my-5"></div>
 
+                    <p class="text-xs text-brand-blue font-medium" x-show="($refs.country?.value || 'IN') === 'IN' && orderAmountForFreeShipping > 0" x-text="'Add order for ₹' + orderAmountForFreeShipping.toLocaleString('en-IN') + ' or more to get shipping free.'"></p>
+                    <p class="text-xs text-brand-blue font-medium" x-show="($refs.country?.value || 'IN') === 'IN' && orderAmountForFreeShipping === 0">Your order qualifies for free shipping across India.</p>
+
+                    <div class="space-y-3">
+                        <p class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/55">Promo code</p>
+                        <template x-if="!promoCode">
+                            <div class="flex gap-2">
+                                <input type="text" x-model="promoInput" placeholder="Enter code" class="field-input flex-1 uppercase" @keydown.enter.prevent="applyPromo()">
+                                <button type="button" class="btn-outline shrink-0 px-4" @click="applyPromo()" :disabled="promoLoading || !(promoInput || '').trim()">Apply</button>
+                            </div>
+                        </template>
+                        <template x-if="promoCode">
+                            <div class="flex items-center justify-between gap-3 bg-surface-cream border border-surface-line px-4 py-3">
+                                <div>
+                                    <div class="text-sm font-medium text-brand-black" x-text="promoCode"></div>
+                                    <div class="text-xs text-brand-blue mt-0.5" x-show="promoLabel" x-text="promoLabel"></div>
+                                </div>
+                                <button type="button" class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/50 hover:text-brand-blue" @click="removePromo()" :disabled="promoLoading">Remove</button>
+                            </div>
+                        </template>
+                        <p class="text-xs text-brand-blue" x-show="promoMessage" x-text="promoMessage"></p>
+                        <p class="text-xs text-red-600" x-show="promoError" x-text="promoError"></p>
+                    </div>
+
+                    <div class="rule my-5"></div>
+
                     <dl class="space-y-2.5 text-sm">
                         <div class="flex justify-between"><dt class="text-brand-black/70">Subtotal</dt><dd>₹{{ number_format($cart->subtotal()) }}</dd></div>
+                        <div class="flex justify-between" x-show="discount > 0">
+                            <dt class="text-brand-black/70">Discount</dt>
+                            <dd class="text-brand-blue" x-text="'−₹' + discount.toLocaleString('en-IN')"></dd>
+                        </div>
+                        <div class="flex justify-between" x-show="promoCode && discount === 0 && serviceable === true && shippingFee === 0">
+                            <dt class="text-brand-black/70">Promo</dt>
+                            <dd class="text-brand-blue">Free shipping</dd>
+                        </div>
                         <div class="flex justify-between">
                             <dt class="text-brand-black/70">Shipping</dt>
                             <dd>
@@ -226,8 +370,9 @@
                 </div>
 
                 <ul class="mt-6 space-y-2 text-[0.72rem] text-brand-black/60 px-1">
+                    <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-brand-blue"></span><span class="text-brand-blue font-medium">Free shipping across India on orders above ₹{{ number_format(config('shipping.india.free_shipping_min', 2000)) }}</span></li>
                     <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-brand-blue"></span>Quality-checked before dispatch</li>
-                    <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-brand-blue"></span>Worldwide shipping · India 3–7 business days</li>
+                    <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-brand-blue"></span>India delivery 3–7 business days</li>
                     <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-brand-blue"></span>Secure encrypted payment</li>
                 </ul>
             </aside>

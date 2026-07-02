@@ -35,6 +35,8 @@ class Order extends Model
         'subtotal',
         'shipping_total',
         'discount_total',
+        'promo_code_id',
+        'promo_code',
         'total',
         'customer_name',
         'customer_email',
@@ -72,6 +74,11 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function promoCodeRecord(): BelongsTo
+    {
+        return $this->belongsTo(PromoCode::class, 'promo_code_id');
     }
 
     public function getRouteKeyName(): string

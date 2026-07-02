@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\ProductResource\RelationManagers;
 
+use App\Support\Sizing;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -16,15 +17,16 @@ class VariantsRelationManager extends RelationManager
 
     public function form(Form $form): Form
     {
+        $product = $this->getOwnerRecord()->loadMissing('category.department');
+        $sizeOptions = Sizing::selectOptions($product->category?->department);
+        $usesAgeSizing = Sizing::departmentUsesAgeSizing($product->category?->department);
+
         return $form->schema([
             Forms\Components\Select::make('size')
-                ->options([
-                    'S' => 'S',
-                    'M' => 'M',
-                    'L' => 'L',
-                    'XL' => 'XL',
-                ])
-                ->required(),
+                ->label($usesAgeSizing ? 'Age / size' : 'Size')
+                ->options($sizeOptions)
+                ->required()
+                ->searchable(),
             Forms\Components\TextInput::make('color')
                 ->maxLength(255),
             Forms\Components\TextInput::make('sku')
@@ -48,7 +50,13 @@ class VariantsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('sku')
             ->columns([
-                Tables\Columns\TextColumn::make('size')->sortable(),
+                Tables\Columns\TextColumn::make('size')
+                    ->label(function () {
+                        $product = $this->getOwnerRecord()->loadMissing('category.department');
+
+                        return $product->usesAgeSizing() ? 'Age' : 'Size';
+                    })
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('color'),
                 Tables\Columns\TextColumn::make('sku')->copyable(),
                 Tables\Columns\TextColumn::make('price_override')->money('INR'),

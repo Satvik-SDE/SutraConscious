@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->text('short_description')->nullable();
             $table->text('description')->nullable();
-            $table->string('fabric')->default('100% Premium Cotton');
+            $table->string('fabric')->default('100% Cotton');
             $table->string('sleeve')->nullable();
             $table->string('color_label')->nullable();
             $table->unsignedInteger('base_price')->default(0);

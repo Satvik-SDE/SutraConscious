@@ -1,17 +1,29 @@
+@php
+    $primaryImage = $product->images->first();
+    $primaryImageUrl = $primaryImage
+        ? \Illuminate\Support\Facades\Storage::disk('public')->url($primaryImage->path)
+        : asset('img/brand/logo.png');
+@endphp
+
 @extends('shop.layouts.app', [
     'title' => ($product->seo_title ?: $product->name) . ' — Sutra Conscious',
-    'metaDescription' => $product->seo_description ?: $product->short_description ?: '100% premium cotton kurta from Sutra Conscious.',
+    'metaDescription' => $product->seo_description ?: $product->short_description ?: '100% cotton kurta from Sutra Conscious.',
     'ogType' => 'product',
+    'ogImage' => $primaryImageUrl,
+    'ogImageAlt' => $product->name,
 ])
 
 @push('head')
+    <meta property="product:price:amount" content="{{ $product->base_price }}">
+    <meta property="product:price:currency" content="{{ $product->currency ?: 'INR' }}">
+    <meta property="product:availability" content="{{ $product->variants->sum('stock') > 0 ? 'in stock' : 'out of stock' }}">
     @php
         $primary = $product->images->first();
         $productLd = [
             '@context' => 'https://schema.org',
             '@type' => 'Product',
             'name' => $product->name,
-            'description' => $product->short_description ?: ($product->seo_description ?: '100% Premium Cotton Kurta by Sutra Conscious'),
+            'description' => $product->short_description ?: ($product->seo_description ?: '100% Cotton Kurta by Sutra Conscious'),
             'sku' => $product->slug,
             'brand' => ['@type' => 'Brand', 'name' => 'Sutra Conscious'],
             'image' => $primary ? \Illuminate\Support\Facades\Storage::disk('public')->url($primary->path) : asset('img/brand/logo.png'),
@@ -160,27 +172,55 @@
 
                     {{-- Material chips --}}
                     <div data-reveal data-reveal-delay="400" class="mt-6 flex flex-wrap gap-2">
-                        <span class="chip"><span class="w-1.5 h-1.5 rounded-full bg-brand-blue"></span>{{ $product->fabric }}</span>
+                        <span class="chip"><span class="w-1.5 h-1.5 rounded-full bg-brand-blue"></span>{{ $product->displayFabric() }}</span>
                         @if($product->sleeve)
                             <span class="chip"><span class="w-1.5 h-1.5 rounded-full bg-brand-blue"></span>{{ $product->sleeve }}</span>
                         @endif
                         <span class="chip"><span class="w-1.5 h-1.5 rounded-full bg-brand-blue"></span>Made in Bharat</span>
                     </div>
 
+                    {{-- Accordions --}}
+                    <div class="mt-8 divide-y divide-surface-line border-y border-surface-line" x-data="{ open: 'shipping' }">
+                        @foreach([
+                            ['key' => 'details', 'title' => 'The Details', 'body' => $product->description ?: '<p>'. e($product->short_description ?: 'Thoughtfully cut from 100% cotton. Breathable, soft, daily-wear ready.') .'</p>'],
+                            ['key' => 'fabric', 'title' => 'Fabric & Care', 'body' => $product->washCareHtml()],
+                            ['key' => 'shipping', 'title' => 'Shipping & Returns', 'body' => '<p><strong class="text-brand-blue">Free shipping across India on orders above ₹'.number_format(config('shipping.india.free_shipping_min', 2000)).'.</strong></p><p class="mt-2">India: 3–7 business days · International: 7–21 business days.</p><p class="mt-2">Returns and Exchanges for change of mind and wrong size selection will not be accepted. Please go through the size chart below. Every kurta is quality-checked before dispatch. Orders are subject to return policy. Know more: <a class="text-brand-blue underline underline-offset-4" href="'. route('shipping-returns') .'">return policy</a>.</p>'],
+                        ] as $acc)
+                            <div>
+                                <button type="button" @click="open = open === '{{ $acc['key'] }}' ? '' : '{{ $acc['key'] }}'" class="w-full flex items-center justify-between py-5 text-left">
+                                    <span class="text-sm uppercase tracking-[0.2em] font-medium text-brand-black">{{ $acc['title'] }}</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-brand-black transition-transform duration-300" :class="open === '{{ $acc['key'] }}' ? 'rotate-45' : ''" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                                    </svg>
+                                </button>
+                                <div x-show="open === '{{ $acc['key'] }}'"
+                                     x-transition:enter="transition ease-silk duration-400"
+                                     x-transition:enter-start="opacity-0 -translate-y-1"
+                                     x-transition:enter-end="opacity-100 translate-y-0"
+                                     x-cloak>
+                                    <div class="pb-5 prose prose-sm max-w-none text-brand-black/75">
+                                        {!! $acc['body'] !!}
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
                     {{-- Variant picker --}}
                     @if($product->variants->isNotEmpty())
                         @php
+                            $ageSizing = $product->usesAgeSizing();
                             $variantStocks = $product->variants->pluck('stock', 'id')->map(fn ($stock) => (int) $stock);
                             $sizeChartUrl = $product->resolvedSizeChartImageUrl();
                         @endphp
                         <div x-data="{ variant: '{{ $product->variants->first()->id }}', qty: 1, stocks: @js($variantStocks), sizeGuideOpen: false }">
-                        <form action="{{ route('cart.add') }}" method="POST" class="mt-10">
+                        <form action="{{ route('cart.add') }}" method="POST" class="mt-8">
                             @csrf
                             <input type="hidden" name="variant_id" :value="variant">
                             <input type="hidden" name="quantity" :value="qty">
 
                             <div class="flex items-center justify-between mb-3">
-                                <div class="field-label mb-0">Size</div>
+                                <div class="field-label mb-0">{{ $product->sizePickerLabel() }}</div>
                                 @if($sizeChartUrl)
                                     <button type="button" @click="sizeGuideOpen = true" class="text-[0.7rem] uppercase tracking-[0.18em] text-brand-black/60 hover:text-brand-blue underline underline-offset-4">Size guide</button>
                                 @endif
@@ -190,14 +230,14 @@
                                 @foreach($product->variants as $variant)
                                     <button type="button"
                                             @click="variant = '{{ $variant->id }}'; qty = Math.min(qty, stocks['{{ $variant->id }}'] || 1) || 1"
-                                            class="w-12 h-12 inline-flex items-center justify-center border transition-all duration-300 ease-silk text-sm font-medium relative"
+                                            class="inline-flex items-center justify-center border transition-all duration-300 ease-silk font-medium relative {{ $ageSizing ? 'min-w-[4.75rem] px-2.5 py-2.5 text-[0.68rem] leading-tight text-center' : 'w-12 h-12 text-sm' }}"
                                             :class="variant === '{{ $variant->id }}' ? 'border-brand-blue bg-brand-blue text-surface-cream' : 'border-surface-line text-brand-black hover:border-brand-blue'"
                                             @if($variant->stock <= 0) disabled @endif
-                                            aria-label="Size {{ $variant->size }}">
+                                            aria-label="{{ $product->sizePickerLabel() }} {{ $variant->size }}">
                                         {{ $variant->size }}
                                         @if($variant->stock <= 0)
                                             <span aria-hidden="true" class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                                <span class="w-12 h-px bg-brand-black/30 rotate-[-30deg]"></span>
+                                                <span class="w-full max-w-[3rem] h-px bg-brand-black/30 rotate-[-30deg]"></span>
                                             </span>
                                         @endif
                                     </button>
@@ -244,33 +284,6 @@
                             Sizes coming soon for this product.
                         </div>
                     @endif
-
-                    {{-- Accordions --}}
-                    <div class="mt-12 divide-y divide-surface-line border-y border-surface-line" x-data="{ open: 'details' }">
-                        @foreach([
-                            ['key' => 'details', 'title' => 'The Details', 'body' => $product->description ?: '<p>'. e($product->short_description ?: 'Thoughtfully cut from 100% premium cotton. Breathable, soft, daily-wear ready.') .'</p>'],
-                            ['key' => 'fabric',  'title' => 'Fabric &amp; Care', 'body' => $product->washCareHtml()],
-                            ['key' => 'shipping','title' => 'Shipping &amp; Returns', 'body' => '<p>Worldwide shipping. India: 3–7 business days · International: 7–21 business days.</p><p class="mt-2">Every kurta is quality-checked before dispatch. Read the <a class="text-brand-blue underline underline-offset-4" href="'. route('shipping-returns') .'">full policy</a>.</p>'],
-                        ] as $acc)
-                            <div>
-                                <button type="button" @click="open = open === '{{ $acc['key'] }}' ? '' : '{{ $acc['key'] }}'" class="w-full flex items-center justify-between py-5 text-left">
-                                    <span class="text-sm uppercase tracking-[0.2em] font-medium text-brand-black">{{ $acc['title'] }}</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-brand-black transition-transform duration-300" :class="open === '{{ $acc['key'] }}' ? 'rotate-45' : ''" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
-                                    </svg>
-                                </button>
-                                <div x-show="open === '{{ $acc['key'] }}'"
-                                     x-transition:enter="transition ease-silk duration-400"
-                                     x-transition:enter-start="opacity-0 -translate-y-1"
-                                     x-transition:enter-end="opacity-100 translate-y-0"
-                                     x-cloak>
-                                    <div class="pb-5 prose prose-sm max-w-none text-brand-black/75">
-                                        {!! $acc['body'] !!}
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
                 </div>
             </div>
         </div>

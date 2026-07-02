@@ -22,6 +22,7 @@ class ProductController extends Controller
             'category.department',
             'publishedReviews' => fn ($query) => $query->latest(),
         ]);
+        $product->setRelation('variants', $product->orderedVariants());
 
         $related = Product::query()
             ->where('is_active', true)

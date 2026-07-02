@@ -20,7 +20,7 @@
                 <img src="{{ asset('img/brand/logo.png') }}" alt="Sutra Conscious" class="h-12 w-auto max-w-[200px] object-contain">
             </a>
             <p class="mt-6 max-w-sm text-sm text-surface-cream/70 leading-relaxed">
-                Conscious cotton, made daily-wear ready. Thoughtfully crafted kurtas in 100% premium cotton — from soil, to skin, to soil.
+                Conscious cotton, made daily-wear ready. Thoughtfully crafted kurtas in 100% cotton — from soil, to skin, to soil.
             </p>
             <div class="mt-8 flex items-center gap-4">
                 <a href="https://www.instagram.com/sutraconscious/" target="_blank" rel="noopener" aria-label="Instagram"

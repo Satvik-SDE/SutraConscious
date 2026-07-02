@@ -35,7 +35,7 @@ class HomeController extends Controller
             ->get();
 
         $departments = Department::query()
-            ->where('is_active', true)
+            ->visibleOnStorefront()
             ->with(['activeCategories' => fn ($q) => $q->with(['products' => fn ($pq) => $pq->where('is_active', true)->with(['images', 'variants'])->limit(1)])])
             ->orderBy('sort_order')
             ->get();

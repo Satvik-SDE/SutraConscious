@@ -1,7 +1,7 @@
 @php
     $messages = [
-        '100% Premium Cotton · Crafted in Bharat',
-        'Free shipping across India on orders above ₹2,499',
+        '100% Cotton · Crafted in Bharat',
+        'Free shipping across India on orders above ₹2,000',
         'Soft new arrivals — The Solids Edition',
         'No synthetics. No compromises. From soil, to skin, to soil.',
     ];

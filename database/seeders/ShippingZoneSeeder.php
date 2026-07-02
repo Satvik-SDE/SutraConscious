@@ -16,39 +16,9 @@ class ShippingZoneSeeder extends Seeder
                 'match_type' => ShippingZone::MATCH_COUNTRY,
                 'match_value' => null,
                 'shipping_fee' => 99,
-                'free_shipping_min' => 2499,
+                'free_shipping_min' => 1999,
                 'is_serviceable' => true,
                 'priority' => 0,
-            ],
-            [
-                'name' => 'India — Metro (400xxx Mumbai)',
-                'country_code' => 'IN',
-                'match_type' => ShippingZone::MATCH_POSTAL_PREFIX,
-                'match_value' => '400',
-                'shipping_fee' => 79,
-                'free_shipping_min' => 2499,
-                'is_serviceable' => true,
-                'priority' => 5,
-            ],
-            [
-                'name' => 'India — Metro (560xxx Bengaluru)',
-                'country_code' => 'IN',
-                'match_type' => ShippingZone::MATCH_POSTAL_PREFIX,
-                'match_value' => '560',
-                'shipping_fee' => 79,
-                'free_shipping_min' => 2499,
-                'is_serviceable' => true,
-                'priority' => 5,
-            ],
-            [
-                'name' => 'India — Metro (110xxx Delhi)',
-                'country_code' => 'IN',
-                'match_type' => ShippingZone::MATCH_POSTAL_PREFIX,
-                'match_value' => '110',
-                'shipping_fee' => 79,
-                'free_shipping_min' => 2499,
-                'is_serviceable' => true,
-                'priority' => 5,
             ],
             [
                 'name' => 'International — Standard',
@@ -92,5 +62,10 @@ class ShippingZoneSeeder extends Seeder
                 $zone,
             );
         }
+
+        ShippingZone::query()
+            ->where('country_code', 'IN')
+            ->where('match_type', ShippingZone::MATCH_POSTAL_PREFIX)
+            ->delete();
     }
 }

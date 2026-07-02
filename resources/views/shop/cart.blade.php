@@ -81,6 +81,11 @@
                 </div>
 
                 <aside class="lg:sticky lg:top-28 lg:self-start" data-reveal="right">
+                    <div class="mb-4 bg-brand-blue/10 border border-brand-blue/20 px-4 py-3 text-sm text-brand-black/80">
+                        <span class="font-medium text-brand-blue">Free shipping across India</span>
+                        on orders above ₹{{ number_format(config('shipping.india.free_shipping_min', 2000)) }}.
+                    </div>
+
                     <div class="bg-brand-skin/30 border border-surface-line p-7">
                         <p class="eyebrow-dim">Order summary</p>
                         <dl class="mt-6 space-y-3 text-sm">
@@ -90,9 +95,15 @@
                             </div>
                             <div class="flex justify-between">
                                 <dt class="text-brand-black/70">Shipping</dt>
-                                <dd class="text-brand-black/60 text-xs uppercase tracking-[0.18em]">Calculated next</dd>
+                                <dd class="text-brand-black/60 text-xs uppercase tracking-[0.18em]">At checkout</dd>
                             </div>
                         </dl>
+                        @php $freeMin = (int) config('shipping.india.free_shipping_min', 2000); @endphp
+                        @if($cart->subtotal() < $freeMin)
+                            <p class="mt-4 text-xs text-brand-blue leading-relaxed">Add order for ₹{{ number_format($freeMin - $cart->subtotal()) }} or more to get shipping free.</p>
+                        @else
+                            <p class="mt-4 text-xs text-brand-blue font-medium">You qualify for free shipping across India.</p>
+                        @endif
                         <div class="rule my-5"></div>
                         <div class="flex items-baseline justify-between">
                             <span class="eyebrow-dim">Total</span>
